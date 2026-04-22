@@ -11,7 +11,7 @@ Acceptance Criteria:
 - pytest runs with a placeholder test
 - import paths are stable and documented
 
-Rubric focus: Design & Code Quality, Testing readiness","setup;build","In Progress"
+Rubric focus: Design & Code Quality, Testing readiness","setup;build","Done"
 "Domain model (Digital ID)","Goal: implement the core Digital ID aggregate and value objects.
 
 Scope:
