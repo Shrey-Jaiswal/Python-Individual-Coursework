@@ -41,7 +41,7 @@ Acceptance Criteria:
 - clear errors for missing records
 - tests cover repository behavior
 
-Rubric focus: Design Quality, Maintainability","persistence;domain","In Progress"
+Rubric focus: Design Quality, Maintainability","persistence;domain","Done"
 "Authorization + validation rules","Goal: enforce central authority-only mutations and validate requests.
 
 Scope:
