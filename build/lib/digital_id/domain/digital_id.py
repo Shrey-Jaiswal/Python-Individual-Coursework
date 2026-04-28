@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Iterable
 
 from digital_id.domain.errors import ImmutableAttributeError
 from digital_id.domain.history import StatusHistoryEntry
