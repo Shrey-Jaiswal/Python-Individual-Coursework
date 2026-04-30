@@ -18,3 +18,10 @@ def test_validate_restriction_uses_domain_validation() -> None:
     r = Restriction(name="r", start=date(2026, 5, 2), end=date(2026, 5, 1))
     with pytest.raises(ValidationError):
         svc.validate_restriction(r)
+
+
+def test_validate_identity_rejects_bad_date_format() -> None:
+    svc = ValidationService()
+    bad = IdentityAttributes(digital_id="did-1", national_id="nat-1", date_of_birth="bad")
+    with pytest.raises(ValidationError):
+        svc.validate_identity(bad)
