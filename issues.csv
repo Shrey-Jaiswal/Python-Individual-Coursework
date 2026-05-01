@@ -53,7 +53,7 @@ Acceptance Criteria:
 - invalid payloads rejected consistently
 - negative cases covered in tests
 
-Rubric focus: Functionality, Reliability","auth;rules","Todo"
+Rubric focus: Functionality, Reliability","auth;rules","Done"
 "Identity management services","Goal: implement create, update, and status change flows.
 
 Scope:
