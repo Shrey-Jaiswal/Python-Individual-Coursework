@@ -71,8 +71,14 @@ class VerificationService:
             return VerificationResult(True, "identity is active")
         return VerificationResult(False, "identity is not active")
 
-    def _active_restrictions(self, restrictions: Iterable[Restriction], as_of: date) -> list[Restriction]:
-        return [restriction for restriction in restrictions if restriction.is_active_on(as_of)]
+    def _active_restrictions(
+        self,
+        restrictions: Iterable[Restriction],
+        as_of: date,
+    ) -> list[Restriction]:
+        return [
+            restriction for restriction in restrictions if restriction.is_active_on(as_of)
+        ]
 
     def _filter_restrictions(
         self,
