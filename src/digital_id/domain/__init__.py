@@ -1,7 +1,7 @@
 """Domain models and rules."""
 
-from digital_id.domain.digital_id import DigitalId, IdentityAttributes, MutableAttributes
 from digital_id.domain.audit import AuditEntry
+from digital_id.domain.digital_id import DigitalId, IdentityAttributes, MutableAttributes
 from digital_id.domain.errors import (
 	DomainError,
 	ImmutableAttributeError,

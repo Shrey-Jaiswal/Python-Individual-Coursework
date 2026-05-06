@@ -1,7 +1,7 @@
 """Application services."""
 
-from .authorization import AuthorizationError, AuthorizationService, Role
 from .audit_log import AuditLog, build_audit_entry
+from .authorization import AuthorizationError, AuthorizationService, Role
 from .identity_service import IdentityService, IdentityUpdateNotAllowedError
 from .validation import ValidationError, ValidationService
 from .verification import VerificationResult, VerificationService
