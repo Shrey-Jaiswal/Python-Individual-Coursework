@@ -50,11 +50,22 @@ def run_scripted_demo(
     output: Callable[[str], None] | None = None,
 ) -> list[str]:
     lines: list[str] = []
+    step = 0
 
     def emit(message: str) -> None:
         lines.append(message)
         if output is not None:
             output(message)
+
+    def emit_step(label: str, outcome: str) -> None:
+        nonlocal step
+        step += 1
+        emit(f"{step:02d}. {label}: {outcome}")
+
+    def format_expected(eligible: bool, expected: bool) -> str:
+        status = "ELIGIBLE" if eligible else "INELIGIBLE"
+        suffix = "expected" if eligible == expected else "unexpected"
+        return f"{status} ({suffix})"
 
     emit("=== Scripted demo ===")
 
@@ -71,7 +82,7 @@ def run_scripted_demo(
     )
 
     created = context.identity_service.create_identity(identity, mutable, Role.CENTRAL)
-    emit("Create identity: OK")
+    emit_step("Create identity", "PASS")
 
     updated_mutable = MutableAttributes(
         name=mutable.name,
@@ -84,7 +95,7 @@ def run_scripted_demo(
         updated_mutable,
         Role.CENTRAL,
     )
-    emit("Update identity: OK")
+    emit_step("Update identity", "PASS")
 
     try:
         context.identity_service.create_identity(
@@ -97,9 +108,10 @@ def run_scripted_demo(
             ),
             Role.CENTRAL,
         )
-        emit("Duplicate identity: OK")
+        duplicate_outcome = "ACCEPTED (unexpected)"
     except DuplicateIdentityError:
-        emit("Duplicate identity: FAIL")
+        duplicate_outcome = "REJECTED (expected)"
+    emit_step("Duplicate identity", duplicate_outcome)
 
     try:
         context.identity_service.change_status(
@@ -108,9 +120,10 @@ def run_scripted_demo(
             "fraud",
             Role.LOCAL,
         )
-        emit("Unauthorized revoke: OK")
+        revoke_outcome = "ACCEPTED (unexpected)"
     except AuthorizationError:
-        emit("Unauthorized revoke: FAIL")
+        revoke_outcome = "REJECTED (expected)"
+    emit_step("Unauthorized revoke", revoke_outcome)
 
     context.identity_service.change_status(
         created.identity.digital_id,
@@ -118,7 +131,7 @@ def run_scripted_demo(
         "review",
         Role.CENTRAL,
     )
-    emit("Suspend identity: OK")
+    emit_step("Suspend identity", "PASS")
 
     tax_result = context.verification_service.verify_tax(
         created,
@@ -126,7 +139,10 @@ def run_scripted_demo(
         period_end=date(2026, 3, 31),
         as_of=date(2026, 4, 1),
     )
-    emit(f"Tax verification while suspended: {'OK' if tax_result.eligible else 'FAIL'}")
+    emit_step(
+        "Tax verification (suspended)",
+        format_expected(tax_result.eligible, expected=False),
+    )
 
     context.identity_service.change_status(
         created.identity.digital_id,
@@ -134,7 +150,7 @@ def run_scripted_demo(
         "appeal granted",
         Role.CENTRAL,
     )
-    emit("Reactivate identity: OK")
+    emit_step("Reactivate identity", "PASS")
 
     created.add_restriction(Restriction(name="driving_suspension", start=date(2026, 1, 1)))
     context.repository.update(created)
@@ -144,7 +160,10 @@ def run_scripted_demo(
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
     )
-    emit(f"Driving verification with restriction: {'OK' if driving_result.eligible else 'FAIL'}")
+    emit_step(
+        "Driving verification (restriction)",
+        format_expected(driving_result.eligible, expected=False),
+    )
 
     created.replace_restrictions([])
     context.repository.update(created)
@@ -154,22 +173,34 @@ def run_scripted_demo(
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
     )
-    emit(f"Driving verification after clear: {'OK' if driving_result.eligible else 'FAIL'}")
+    emit_step(
+        "Driving verification (cleared)",
+        format_expected(driving_result.eligible, expected=True),
+    )
 
     local_result = context.verification_service.verify_local_authority(
         created,
         required_locality="Leeds",
     )
-    emit(f"Local authority check mismatch: {'OK' if local_result.eligible else 'FAIL'}")
+    emit_step(
+        "Local authority (mismatch)",
+        format_expected(local_result.eligible, expected=False),
+    )
 
     local_result = context.verification_service.verify_local_authority(
         created,
         required_locality="London",
     )
-    emit(f"Local authority check match: {'OK' if local_result.eligible else 'FAIL'}")
+    emit_step(
+        "Local authority (match)",
+        format_expected(local_result.eligible, expected=True),
+    )
 
     bank_result = context.verification_service.verify_bank_employer(created)
-    emit(f"Bank/employer check: {'OK' if bank_result.eligible else 'FAIL'}")
+    emit_step(
+        "Bank/employer check",
+        format_expected(bank_result.eligible, expected=True),
+    )
 
     emit(f"Audit entries recorded: {len(context.audit_log.list_all())}")
 
