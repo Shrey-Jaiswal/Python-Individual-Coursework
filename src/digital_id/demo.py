@@ -60,7 +60,7 @@ def run_scripted_demo(
     def emit_step(label: str, outcome: str) -> None:
         nonlocal step
         step += 1
-        emit(f"{step:02d}. {label}: {outcome}")
+        emit(f"  {step:02d}. {label:<36} [{outcome}]")
 
     def format_expected(eligible: bool, expected: bool) -> str:
         status = "ELIGIBLE" if eligible else "INELIGIBLE"
@@ -68,6 +68,8 @@ def run_scripted_demo(
         return f"{status} ({suffix})"
 
     emit("=== Scripted demo ===")
+    emit("")
+    emit("Steps:")
 
     identity = IdentityAttributes(
         digital_id="did-1",
@@ -202,12 +204,14 @@ def run_scripted_demo(
         format_expected(bank_result.eligible, expected=True),
     )
 
-    emit(f"Audit entries recorded: {len(context.audit_log.list_all())}")
+    emit("")
+    emit("Audit:")
+    emit(f"  Entries recorded: {len(context.audit_log.list_all())}")
 
     if audit_path is not None:
         context.audit_log.export_json(audit_path)
-        emit(f"Audit export: {audit_path}")
+        emit(f"  Exported to: {audit_path}")
     else:
-        emit("Audit export: skipped")
+        emit("  Exported to: skipped")
 
     return lines
