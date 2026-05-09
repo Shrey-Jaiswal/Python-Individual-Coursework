@@ -48,28 +48,39 @@ def run_scripted_demo(
     context: DemoContext,
     audit_path: Path | None = None,
     output: Callable[[str], None] | None = None,
+    style: str = "compact",
 ) -> list[str]:
     lines: list[str] = []
     step = 0
+    style_key = style.lower().strip()
 
     def emit(message: str) -> None:
         lines.append(message)
         if output is not None:
             output(message)
 
+    def emit_header() -> None:
+        if style_key == "pretty":
+            emit("=== Scripted demo ===")
+            emit("")
+            emit("Steps:")
+            return
+        emit("Scripted demo")
+
     def emit_step(label: str, outcome: str) -> None:
         nonlocal step
         step += 1
-        emit(f"  {step:02d}. {label:<36} [{outcome}]")
+        if style_key == "pretty":
+            emit(f"  {step:02d}. {label:<36} [{outcome}]")
+            return
+        emit(f"{step:02d} {label:<30} {outcome}")
 
     def format_expected(eligible: bool, expected: bool) -> str:
         status = "ELIGIBLE" if eligible else "INELIGIBLE"
         suffix = "expected" if eligible == expected else "unexpected"
         return f"{status} ({suffix})"
 
-    emit("=== Scripted demo ===")
-    emit("")
-    emit("Steps:")
+    emit_header()
 
     identity = IdentityAttributes(
         digital_id="did-1",
@@ -204,14 +215,21 @@ def run_scripted_demo(
         format_expected(bank_result.eligible, expected=True),
     )
 
-    emit("")
-    emit("Audit:")
-    emit(f"  Entries recorded: {len(context.audit_log.list_all())}")
+    audit_entries = len(context.audit_log.list_all())
 
     if audit_path is not None:
         context.audit_log.export_json(audit_path)
-        emit(f"  Exported to: {audit_path}")
+        export_label = str(audit_path)
     else:
-        emit("  Exported to: skipped")
+        export_label = "skipped"
+
+    if style_key == "pretty":
+        emit("")
+        emit("Audit:")
+        emit(f"  Entries recorded: {audit_entries}")
+        emit(f"  Exported to: {export_label}")
+    else:
+        emit(f"Audit entries: {audit_entries}")
+        emit(f"Audit export: {export_label}")
 
     return lines
