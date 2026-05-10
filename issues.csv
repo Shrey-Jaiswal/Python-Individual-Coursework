@@ -139,7 +139,7 @@ Acceptance Criteria:
 - ruff and mypy succeed
 - python version pinned (3.11)
 
-Rubric focus: Testing & CI","ci","Todo"
+Rubric focus: Testing & CI","ci","In Progress"
 "README + architecture overview","Goal: provide clear usage and structure docs.
 
 Scope:
