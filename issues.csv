@@ -1,0 +1,168 @@
+title,body,labels,status
+"Project scaffolding (Python)","Goal: create the Python project layout and base package structure.
+
+Scope:
+- src/ package with clear module boundaries (domain, services, adapters)
+- tests/ package with pytest discovery
+- dependency file (pyproject.toml or requirements.txt)
+- minimal entrypoint for CLI demo
+
+Acceptance Criteria:
+- pytest runs with a placeholder test
+- import paths are stable and documented
+
+Rubric focus: Design & Code Quality, Testing readiness","setup;build","In Progress"
+"Domain model (Digital ID)","Goal: implement the core Digital ID aggregate and value objects.
+
+Scope:
+- DigitalId, Status, Restriction, StatusHistory
+- immutable vs mutable attributes
+- deterministic transition rules
+
+Acceptance Criteria:
+- immutable attributes enforced (id, national_id, date_of_birth)
+- status history recorded with timestamps
+- restriction model supports optional periods
+
+Rubric focus: Functionality, Design Quality","domain","Todo"
+"Repository layer (in-memory)","Goal: create repository abstraction and in-memory implementation.
+
+Scope:
+- repository interface
+- in-memory repository with indexes
+
+Acceptance Criteria:
+- CRUD operations supported
+- lookup by id and national_id
+- clear errors for missing records
+- tests cover repository behavior
+
+Rubric focus: Design Quality, Maintainability","persistence;domain","Todo"
+"Authorization + validation rules","Goal: enforce central authority-only mutations and validate requests.
+
+Scope:
+- authorization checks per operation
+- input validation and error model
+
+Acceptance Criteria:
+- unauthorized operations rejected with clear errors
+- invalid payloads rejected consistently
+- negative cases covered in tests
+
+Rubric focus: Functionality, Reliability","auth;rules","Todo"
+"Identity management services","Goal: implement create, update, and status change flows.
+
+Scope:
+- create new identity
+- update permitted fields
+- change status with transition checks
+
+Acceptance Criteria:
+- invalid transitions rejected
+- updates on revoked IDs rejected
+- deterministic handling of repeated operations
+- idempotent behavior documented
+
+Rubric focus: Functionality, Reliability","application;rules","Todo"
+"Verification strategies (org-specific)","Goal: implement per-organisation verification rules.
+
+Scope:
+- tax authority
+- driving licence authority
+- local authority
+- bank/employer minimal response
+
+Acceptance Criteria:
+- tax: active + reporting period constraints
+- driving licence: active + restriction flags
+- local authority: active + residency eligibility
+- bank/employer: validity-only response
+
+Rubric focus: Functionality, Professional behavior","rules","Todo"
+"Audit logging","Goal: record key actions for traceability.
+
+Scope:
+- create, update, status change, verification
+- actor and timestamp
+
+Acceptance Criteria:
+- log entries created for all key actions
+- actor and timestamp included
+- log printable for demo
+
+Rubric focus: Reliability, Communication","audit","Todo"
+"CLI demo runner (scripted)","Goal: build deterministic console demo flow.
+
+Scope:
+- scripted scenario that covers success + failure paths
+- clean output for video
+
+Acceptance Criteria:
+- deterministic output
+- includes at least one failure and one success case
+- output is clear and structured
+
+Rubric focus: Technical Communication","cli;demo","Todo"
+"Unit test suite (pytest)","Goal: implement tests for core rules and edge cases.
+
+Scope:
+- domain rules
+- service flows
+- org-specific verification
+
+Acceptance Criteria:
+- each org rule has positive and negative test
+- status history and restriction periods tested
+- tests cover invalid transitions and update rules
+
+Rubric focus: Testing & Verification","tests","Todo"
+"CI pipeline (GitHub Actions)","Goal: build automated test pipeline.
+
+Scope:
+- workflow on push and PR
+- pytest execution
+
+Acceptance Criteria:
+- workflow runs on push and PR
+- pytest executes successfully
+- python version pinned (3.11 or 3.12)
+
+Rubric focus: Testing & CI","ci","Todo"
+"README + architecture overview","Goal: provide clear usage and structure docs.
+
+Scope:
+- run instructions
+- architecture overview and package map
+- repo link and demo summary
+
+Acceptance Criteria:
+- run instructions are accurate
+- architecture and components clearly explained
+- demo scenario summarized
+
+Rubric focus: Technical Communication","docs","Todo"
+"Video demo script","Goal: concise demo outline for 10-minute video.
+
+Scope:
+- architecture explanation
+- walkthrough of workflows and tests
+- CI proof
+
+Acceptance Criteria:
+- under 10 minutes
+- clear sequence of talking points
+- includes live CLI demo plan
+
+Rubric focus: Technical Communication","docs;video","Todo"
+"Development evidence (commits + board hygiene)","Goal: show organized development evidence.
+
+Scope:
+- incremental commits tied to issues
+- board status kept up to date
+
+Acceptance Criteria:
+- commit history shows steady progression
+- issues updated one at a time
+- board statuses reflect actual work
+
+Rubric focus: Version Control & Development Evidence","process;version-control","Todo"
