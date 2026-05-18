@@ -9,6 +9,7 @@ Scope:
 
 Acceptance Criteria:
 - pytest runs with a placeholder test
+- ruff and mypy configs are present
 - import paths are stable and documented
 
 Rubric focus: Design & Code Quality, Testing readiness","setup;build","Done"
@@ -23,6 +24,7 @@ Acceptance Criteria:
 - immutable attributes enforced (id, national_id, date_of_birth)
 - status history recorded with timestamps
 - restriction model supports optional periods
+- type hints support mypy in domain modules
 
 Rubric focus: Functionality, Design Quality","domain","Todo"
 "Repository layer (in-memory)","Goal: create repository abstraction and in-memory implementation.
@@ -30,10 +32,12 @@ Rubric focus: Functionality, Design Quality","domain","Todo"
 Scope:
 - repository interface
 - in-memory repository with indexes
+- JSON persistence (load/save) with versioned schema
 
 Acceptance Criteria:
 - CRUD operations supported
 - lookup by id and national_id
+- JSON persistence roundtrip works
 - clear errors for missing records
 - tests cover repository behavior
 
@@ -84,23 +88,27 @@ Rubric focus: Functionality, Professional behavior","rules","Todo"
 Scope:
 - create, update, status change, verification
 - actor and timestamp
+- JSON export for audit log
 
 Acceptance Criteria:
 - log entries created for all key actions
 - actor and timestamp included
 - log printable for demo
+- JSON export file produced on demand
 
 Rubric focus: Reliability, Communication","audit","Todo"
 "CLI demo runner (scripted)","Goal: build deterministic console demo flow.
 
 Scope:
 - scripted scenario that covers success + failure paths
+- thin interactive menu after scripted run
 - clean output for video
 
 Acceptance Criteria:
 - deterministic output
 - includes at least one failure and one success case
 - output is clear and structured
+- interactive mode offers key operations safely
 
 Rubric focus: Technical Communication","cli;demo","Todo"
 "Unit test suite (pytest)","Goal: implement tests for core rules and edge cases.
@@ -114,18 +122,22 @@ Acceptance Criteria:
 - each org rule has positive and negative test
 - status history and restriction periods tested
 - tests cover invalid transitions and update rules
+- coverage report generated (pytest-cov)
 
 Rubric focus: Testing & Verification","tests","Todo"
 "CI pipeline (GitHub Actions)","Goal: build automated test pipeline.
 
 Scope:
 - workflow on push and PR
-- pytest execution
+- pytest execution with coverage
+- ruff lint
+- mypy type checks
 
 Acceptance Criteria:
 - workflow runs on push and PR
-- pytest executes successfully
-- python version pinned (3.11 or 3.12)
+- pytest executes successfully with coverage
+- ruff and mypy succeed
+- python version pinned (3.11)
 
 Rubric focus: Testing & CI","ci","Todo"
 "README + architecture overview","Goal: provide clear usage and structure docs.
@@ -133,11 +145,15 @@ Rubric focus: Testing & CI","ci","Todo"
 Scope:
 - run instructions
 - architecture overview and package map
+- mermaid architecture diagram
+- coverage badge
 - repo link and demo summary
 
 Acceptance Criteria:
 - run instructions are accurate
 - architecture and components clearly explained
+- mermaid diagram renders on GitHub
+- coverage badge is present
 - demo scenario summarized
 
 Rubric focus: Technical Communication","docs","Todo"
@@ -152,6 +168,7 @@ Acceptance Criteria:
 - under 10 minutes
 - clear sequence of talking points
 - includes live CLI demo plan
+- highlights tests, coverage, and CI
 
 Rubric focus: Technical Communication","docs;video","Todo"
 "Development evidence (commits + board hygiene)","Goal: show organized development evidence.
@@ -162,6 +179,7 @@ Scope:
 
 Acceptance Criteria:
 - commit history shows steady progression
+- 3-5 commits per ticket
 - issues updated one at a time
 - board statuses reflect actual work
 
