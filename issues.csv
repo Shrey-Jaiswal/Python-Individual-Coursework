@@ -26,7 +26,7 @@ Acceptance Criteria:
 - restriction model supports optional periods
 - type hints support mypy in domain modules
 
-Rubric focus: Functionality, Design Quality","domain","Todo"
+Rubric focus: Functionality, Design Quality","domain","In Progress"
 "Repository layer (in-memory)","Goal: create repository abstraction and in-memory implementation.
 
 Scope:
