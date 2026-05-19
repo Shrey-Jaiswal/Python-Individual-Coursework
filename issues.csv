@@ -96,7 +96,7 @@ Acceptance Criteria:
 - log printable for demo
 - JSON export file produced on demand
 
-Rubric focus: Reliability, Communication","audit","Todo"
+Rubric focus: Reliability, Communication","audit","In Progress"
 "CLI demo runner (scripted)","Goal: build deterministic console demo flow.
 
 Scope:
