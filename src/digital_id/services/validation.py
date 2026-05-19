@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import date
 
-from digital_id.domain import IdentityAttributes, Restriction, InvalidRestrictionError
+from digital_id.domain import IdentityAttributes, InvalidRestrictionError, Restriction
 
 
 class ValidationError(Exception):
@@ -19,9 +19,12 @@ class ValidationService:
             raise ValidationError("digital_id must not be empty")
         if not identity.national_id:
             raise ValidationError("national_id must not be empty")
-        # date_of_birth left as string for this coursework; ensure non-empty
         if not identity.date_of_birth:
             raise ValidationError("date_of_birth must not be empty")
+        try:
+            date.fromisoformat(identity.date_of_birth)
+        except ValueError as exc:
+            raise ValidationError("date_of_birth must be YYYY-MM-DD") from exc
 
     def validate_restriction(self, restriction: Restriction) -> None:
         try:
