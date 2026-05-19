@@ -67,3 +67,24 @@ def test_restriction_validation_rejects_invalid_period() -> None:
     )
     with pytest.raises(InvalidRestrictionError):
         restriction.validate()
+
+
+def test_restriction_is_active_on_bounds() -> None:
+    restriction = Restriction(
+        name="travel_hold",
+        start=date(2026, 5, 1),
+        end=date(2026, 5, 3),
+    )
+
+    assert restriction.is_active_on(date(2026, 5, 1)) is True
+    assert restriction.is_active_on(date(2026, 5, 2)) is True
+    assert restriction.is_active_on(date(2026, 5, 3)) is True
+    assert restriction.is_active_on(date(2026, 4, 30)) is False
+    assert restriction.is_active_on(date(2026, 5, 4)) is False
+
+
+def test_restriction_validation_rejects_empty_name() -> None:
+    restriction = Restriction(name=" ")
+
+    with pytest.raises(InvalidRestrictionError):
+        restriction.validate()
