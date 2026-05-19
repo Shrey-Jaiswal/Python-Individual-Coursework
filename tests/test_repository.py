@@ -8,6 +8,8 @@ from digital_id.persistence import (
     InMemoryRepository,
     JsonStore,
     NotFoundError,
+    PersistenceError,
+    SchemaVersionError,
 )
 
 
@@ -57,3 +59,23 @@ def test_json_store_roundtrip(tmp_path: Path) -> None:
     assert len(loaded) == 1
     assert loaded[0].identity.digital_id == "did-1"
     assert loaded[0].identity.national_id == "nat-1"
+
+
+def test_json_store_rejects_schema_version(tmp_path: Path) -> None:
+    path = tmp_path / "ids.json"
+    path.write_text('{"schema_version": 999, "identities": []}', encoding="utf-8")
+
+    store = JsonStore(path)
+
+    with pytest.raises(SchemaVersionError):
+        store.load()
+
+
+def test_json_store_rejects_invalid_root_format(tmp_path: Path) -> None:
+    path = tmp_path / "ids.json"
+    path.write_text('["not-a-dict"]', encoding="utf-8")
+
+    store = JsonStore(path)
+
+    with pytest.raises(PersistenceError):
+        store.load()
