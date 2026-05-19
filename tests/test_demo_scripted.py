@@ -9,10 +9,10 @@ def test_scripted_demo_outputs_and_audit(tmp_path: Path) -> None:
 
     lines = run_scripted_demo(context, audit_path=audit_path)
 
-    assert "Create identity: OK" in lines
-    assert "Duplicate identity: FAIL" in lines
-    assert "Unauthorized revoke: FAIL" in lines
-    assert "Tax verification while suspended: FAIL" in lines
+    assert "01. Create identity: PASS" in lines
+    assert "03. Duplicate identity: REJECTED (expected)" in lines
+    assert "04. Unauthorized revoke: REJECTED (expected)" in lines
+    assert "06. Tax verification (suspended): INELIGIBLE (expected)" in lines
     assert "Audit entries recorded: 10" in lines
     assert audit_path.exists()
     assert len(context.audit_log.list_all()) == 10
