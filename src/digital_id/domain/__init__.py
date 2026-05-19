@@ -1,6 +1,7 @@
 """Domain models and rules."""
 
 from digital_id.domain.digital_id import DigitalId, IdentityAttributes, MutableAttributes
+from digital_id.domain.audit import AuditEntry
 from digital_id.domain.errors import (
 	DomainError,
 	ImmutableAttributeError,
@@ -12,6 +13,7 @@ from digital_id.domain.restrictions import Restriction
 from digital_id.domain.status import Status
 
 __all__ = [
+	"AuditEntry",
 	"DigitalId",
 	"IdentityAttributes",
 	"MutableAttributes",
