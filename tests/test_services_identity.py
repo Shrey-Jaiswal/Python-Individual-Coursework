@@ -57,8 +57,10 @@ def test_create_identity_central_success() -> None:
 
     created = service.create_identity(identity, mutable, Role.CENTRAL)
 
-    assert created.identity == identity
-    assert created.mutable == mutable
+    assert created.digital_id == identity.digital_id
+    assert created.national_id == identity.national_id
+    assert created.name == mutable.name
+    assert created.address == mutable.address
 
 
 def test_create_identity_rejects_non_central() -> None:
@@ -111,7 +113,8 @@ def test_update_mutable_idempotent() -> None:
 
     updated = service.update_mutable(identity.digital_id, mutable, Role.CENTRAL)
 
-    assert updated.mutable == mutable
+    assert updated.name == mutable.name
+    assert updated.address == mutable.address
 
 
 def test_update_mutable_rejects_revoked() -> None:
@@ -182,7 +185,19 @@ def test_change_status_same_state_is_noop() -> None:
     )
 
     assert unchanged.status is Status.ACTIVE
-    assert unchanged.status_history == []
+    assert unchanged.status_history_count == 0
+
+
+def test_list_identities_returns_snapshots_for_central_and_auditor() -> None:
+    service = make_service()
+    identity = make_identity()
+    service.create_identity(identity, make_mutable(), Role.CENTRAL)
+
+    assert service.list_identities(Role.CENTRAL)[0].digital_id == identity.digital_id
+    assert service.list_identities(Role.AUDITOR)[0].digital_id == identity.digital_id
+
+    with pytest.raises(AuthorizationError):
+        service.list_identities(Role.LOCAL)
 
 
 def test_restriction_management_is_central_only_and_persisted() -> None:

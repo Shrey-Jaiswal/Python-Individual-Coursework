@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from digital_id.domain import (
@@ -23,6 +24,20 @@ from digital_id.services.validation import ValidationError, ValidationService
 
 class IdentityUpdateNotAllowedError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class IdentitySnapshot:
+    digital_id: str
+    national_id: str
+    date_of_birth: str
+    name: str
+    address: str
+    email: str
+    phone: str
+    status: Status
+    restrictions: tuple[str, ...]
+    status_history_count: int
 
 
 class IdentityService:
@@ -52,7 +67,7 @@ class IdentityService:
         identity: IdentityAttributes,
         mutable: MutableAttributes,
         role: Role,
-    ) -> DigitalId:
+    ) -> IdentitySnapshot:
         try:
             self._ensure_central(role)
             self._validator.validate_identity(identity)
@@ -73,7 +88,7 @@ class IdentityService:
                         "reason": "matching identity already exists",
                     },
                 )
-                return existing
+                return self._to_snapshot(existing)
             self._record_denied(
                 "identity_created",
                 role,
@@ -90,9 +105,14 @@ class IdentityService:
             target_id=identity.digital_id,
             details={"national_id": identity.national_id, "outcome": "success"},
         )
-        return digital_id
+        return self._to_snapshot(digital_id)
 
-    def update_mutable(self, digital_id: str, updates: MutableAttributes, role: Role) -> DigitalId:
+    def update_mutable(
+        self,
+        digital_id: str,
+        updates: MutableAttributes,
+        role: Role,
+    ) -> IdentitySnapshot:
         try:
             self._ensure_central(role)
             identity = self._repository.get_by_id(digital_id)
@@ -119,7 +139,7 @@ class IdentityService:
                 target_id=identity.identity.digital_id,
                 details={"outcome": "no_op", "reason": "mutable attributes unchanged"},
             )
-            return identity
+            return self._to_snapshot(identity)
 
         identity.update_mutable(updates)
         self._repository.update(identity)
@@ -129,7 +149,7 @@ class IdentityService:
             target_id=identity.identity.digital_id,
             details={"address": updates.address, "email": updates.email, "outcome": "success"},
         )
-        return identity
+        return self._to_snapshot(identity)
 
     def change_status(
         self,
@@ -137,7 +157,7 @@ class IdentityService:
         next_status: Status,
         reason: str,
         role: Role,
-    ) -> DigitalId:
+    ) -> IdentitySnapshot:
         try:
             identity = self._repository.get_by_id(digital_id)
             self._auth.ensure_can_change(role, identity.status, next_status)
@@ -156,7 +176,7 @@ class IdentityService:
                     "outcome": "no_op",
                 },
             )
-            return identity
+            return self._to_snapshot(identity)
         self._repository.update(identity)
         self._record(
             action="status_changed",
@@ -164,14 +184,14 @@ class IdentityService:
             target_id=identity.identity.digital_id,
             details={"to": next_status.value, "reason": reason, "outcome": "success"},
         )
-        return identity
+        return self._to_snapshot(identity)
 
     def add_restriction(
         self,
         digital_id: str,
         restriction: Restriction,
         role: Role,
-    ) -> DigitalId:
+    ) -> IdentitySnapshot:
         try:
             self._ensure_central(role)
             identity = self._repository.get_by_id(digital_id)
@@ -194,14 +214,14 @@ class IdentityService:
             target_id=identity.identity.digital_id,
             details={"restriction": restriction.name, "outcome": "success"},
         )
-        return identity
+        return self._to_snapshot(identity)
 
     def replace_restrictions(
         self,
         digital_id: str,
         restrictions: Iterable[Restriction],
         role: Role,
-    ) -> DigitalId:
+    ) -> IdentitySnapshot:
         try:
             self._ensure_central(role)
             identity = self._repository.get_by_id(digital_id)
@@ -230,7 +250,12 @@ class IdentityService:
             target_id=identity.identity.digital_id,
             details={"count": str(len(prepared)), "outcome": "success"},
         )
-        return identity
+        return self._to_snapshot(identity)
+
+    def list_identities(self, role: Role) -> list[IdentitySnapshot]:
+        if role not in {Role.CENTRAL, Role.AUDITOR}:
+            raise AuthorizationError("Only central authority or auditor may list identities.")
+        return [self._to_snapshot(identity) for identity in self._repository.list_all()]
 
     def _ensure_central(self, role: Role) -> None:
         if role is not Role.CENTRAL:
@@ -268,4 +293,18 @@ class IdentityService:
             actor=role.value,
             target_id=target_id or "unknown",
             details={"outcome": "denied", "reason": reason},
+        )
+
+    def _to_snapshot(self, identity: DigitalId) -> IdentitySnapshot:
+        return IdentitySnapshot(
+            digital_id=identity.identity.digital_id,
+            national_id=identity.identity.national_id,
+            date_of_birth=identity.identity.date_of_birth,
+            name=identity.mutable.name,
+            address=identity.mutable.address,
+            email=identity.mutable.email,
+            phone=identity.mutable.phone,
+            status=identity.status,
+            restrictions=tuple(restriction.name for restriction in identity.restrictions),
+            status_history_count=len(identity.status_history),
         )
