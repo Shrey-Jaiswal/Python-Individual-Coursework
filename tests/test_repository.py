@@ -155,3 +155,40 @@ def test_json_store_rejects_invalid_dates(tmp_path: Path) -> None:
 
     with pytest.raises(PersistenceError):
         store.load()
+
+
+def test_json_store_rejects_missing_changed_at(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "identities": [
+            {
+                "identity": {
+                    "digital_id": "did-1",
+                    "national_id": "nat-1",
+                    "date_of_birth": "1990-01-01",
+                },
+                "mutable": {
+                    "name": "Ava Example",
+                    "address": "1 High Street",
+                    "email": "ava@example.com",
+                    "phone": "0000000000",
+                },
+                "status": "active",
+                "restrictions": [],
+                "status_history": [
+                    {
+                        "from_status": "active",
+                        "to_status": "suspended",
+                        "reason": "review",
+                    }
+                ],
+            }
+        ],
+    }
+    path = tmp_path / "ids.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    store = JsonStore(path)
+
+    with pytest.raises(PersistenceError):
+        store.load()
