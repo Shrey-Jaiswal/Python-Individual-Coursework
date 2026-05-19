@@ -9,6 +9,7 @@ from pathlib import Path
 
 from digital_id.domain import (
     IdentityAttributes,
+    ImmutableAttributeError,
     InvalidStatusTransition,
     MutableAttributes,
     Restriction,
@@ -126,6 +127,18 @@ def run_scripted_demo(
     emit_step("Update identity", "PASS")
 
     try:
+        agg = context.repository.get_by_id(created.digital_id)
+        agg.update_immutable(IdentityAttributes(
+            digital_id=created.digital_id,
+            national_id="changed-national-id",
+            date_of_birth=created.date_of_birth,
+        ))
+        immutable_outcome = "ACCEPTED (unexpected)"
+    except ImmutableAttributeError:
+        immutable_outcome = "REJECTED (expected)"
+    emit_step("Domain immutable update", immutable_outcome)
+
+    try:
         context.identity_service.create_identity(
             identity,
             MutableAttributes(
@@ -204,6 +217,18 @@ def run_scripted_demo(
     emit_step(
         "Tax verification (history)",
         format_expected(tax_result.eligible, expected=False),
+    )
+
+    unfinished_tax = context.verification_service.verify_tax(
+        created.digital_id,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 6, 30),
+        role=Role.TAX_AUTHORITY,
+        as_of=date(2026, 4, 1),
+    )
+    emit_step(
+        "Tax period check failure",
+        format_expected(unfinished_tax.eligible, expected=False),
     )
 
     context.identity_service.add_restriction(
