@@ -1,1 +1,0 @@
-"""External adapters (CLI, IO)."""
