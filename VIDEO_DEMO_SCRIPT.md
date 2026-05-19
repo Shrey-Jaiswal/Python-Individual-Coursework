@@ -42,6 +42,7 @@ python -m digital_id --scripted-only --audit-path audit_log.json
 - "Create identity and update passes."
 - "Duplicate creation is rejected as expected."
 - "A non-central role attempting a status change is rejected."
+- "A bank role attempting tax verification is rejected (org-level authorisation)."
 - "Tax verification fails while suspended, then passes when reactivated."
 - "Driving verification fails with an active restriction, then passes when cleared."
 - "Local authority check shows locality mismatch then match."
