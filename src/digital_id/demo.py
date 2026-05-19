@@ -35,7 +35,7 @@ def build_demo_context() -> DemoContext:
     auth = AuthorizationService()
     validator = ValidationService()
     identity_service = IdentityService(repository, auth, validator, audit_log)
-    verification_service = VerificationService(audit_log=audit_log)
+    verification_service = VerificationService(auth_service=auth, audit_log=audit_log)
     return DemoContext(
         repository=repository,
         identity_service=identity_service,
@@ -137,6 +137,7 @@ def run_scripted_demo(
         created,
         period_start=date(2026, 1, 1),
         period_end=date(2026, 3, 31),
+        role=Role.TAX_AUTHORITY,
         as_of=date(2026, 4, 1),
     )
     emit_step(
@@ -157,6 +158,7 @@ def run_scripted_demo(
 
     driving_result = context.verification_service.verify_driving_licence(
         created,
+        role=Role.DRIVING_LICENCE_AUTHORITY,
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
     )
@@ -170,6 +172,7 @@ def run_scripted_demo(
 
     driving_result = context.verification_service.verify_driving_licence(
         created,
+        role=Role.DRIVING_LICENCE_AUTHORITY,
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
     )
@@ -180,6 +183,7 @@ def run_scripted_demo(
 
     local_result = context.verification_service.verify_local_authority(
         created,
+        role=Role.LOCAL,
         required_locality="Leeds",
     )
     emit_step(
@@ -189,6 +193,7 @@ def run_scripted_demo(
 
     local_result = context.verification_service.verify_local_authority(
         created,
+        role=Role.LOCAL,
         required_locality="London",
     )
     emit_step(
@@ -196,7 +201,10 @@ def run_scripted_demo(
         format_expected(local_result.eligible, expected=True),
     )
 
-    bank_result = context.verification_service.verify_bank_employer(created)
+    bank_result = context.verification_service.verify_bank_employer(
+        created,
+        role=Role.BANK_EMPLOYER,
+    )
     emit_step(
         "Bank/employer check",
         format_expected(bank_result.eligible, expected=True),

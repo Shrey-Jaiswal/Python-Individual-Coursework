@@ -55,8 +55,9 @@ def test_verification_service_records_audit_entries() -> None:
     from digital_id.domain import DigitalId
 
     did = DigitalId(identity=identity, mutable=mutable)
-    verification.verify_bank_employer(did)
+    verification.verify_bank_employer(did, role=Role.BANK_EMPLOYER)
 
     entries = log.list_all()
     assert len(entries) == 1
     assert entries[0].action == "verify_bank"
+    assert entries[0].actor == Role.BANK_EMPLOYER.value

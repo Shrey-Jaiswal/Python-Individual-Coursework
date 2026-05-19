@@ -160,7 +160,12 @@ def _handle_verification(
         except ValueError as exc:
             output(str(exc))
             return
-        result = context.verification_service.verify_tax(identity, period_start, period_end)
+        result = context.verification_service.verify_tax(
+            identity,
+            period_start,
+            period_end,
+            role=Role.TAX_AUTHORITY,
+        )
     elif choice == "b":
         keywords_raw = input_fn(
             "Restriction keywords (comma separated, optional): "
@@ -172,16 +177,21 @@ def _handle_verification(
         )
         result = context.verification_service.verify_driving_licence(
             identity,
+            role=Role.DRIVING_LICENCE_AUTHORITY,
             restriction_keywords=keywords,
         )
     elif choice == "c":
         locality = input_fn("Required locality (optional): ").strip() or None
         result = context.verification_service.verify_local_authority(
             identity,
+            role=Role.LOCAL,
             required_locality=locality,
         )
     elif choice == "d":
-        result = context.verification_service.verify_bank_employer(identity)
+        result = context.verification_service.verify_bank_employer(
+            identity,
+            role=Role.BANK_EMPLOYER,
+        )
     else:
         output("Unknown verification type.")
         return
