@@ -13,7 +13,7 @@ lifecycles, and tax period date logic, while logging all events. The CLI needs t
 independent of backend adjustments.
 
 ### Decision
-We split the system into three layers:
+The system is split into three layers:
 1. Domain model (`src/digital_id/domain`): Contains pure business entities (`DigitalId` aggregate,
    `Restriction`, `Status`) and internal validators. It does not depend on database adapters or
    logging frameworks.
@@ -30,10 +30,10 @@ transaction. This structure prevents the presentation layer from bypassing syste
 every command must go through services that enforce authorization and validation.
 
 ### Alternatives
-- Fat Domain Model: We could have made the `DigitalId` entity write to the database and logs
-  directly. We rejected this because it makes testing the domain model difficult without setting
+- Fat Domain Model: An alternative was making the `DigitalId` entity write to the database and logs
+  directly. This was rejected because it makes testing the domain model difficult without setting
   up mock databases and log files.
-- Fat CLI: We could have put the orchestration logic directly in the CLI. We rejected this
+- Fat CLI: The orchestration logic could have been placed directly in the CLI. This was rejected
   because it leaks security policies into the UI, making it hard to share logic between the
   interactive menu and the scripted demo.
 
@@ -57,9 +57,9 @@ back through the `IdentityService` update methods, which triggers permission che
 rules, and audit logs.
 
 ### Alternatives
-- Relying on developer discipline: We rejected this. In security systems, state boundaries must be
+- Relying on developer discipline: This was rejected. In security systems, state boundaries must be
   enforced by the code, not by guidelines.
-- Frozen domain objects: We considered making all domain classes immutable. We rejected this
+- Frozen domain objects: The option of making all domain classes immutable was considered but rejected
   because writing copy-on-write modifications for every small field edit in Python creates a lot
   of repetitive code, which makes the codebase harder to maintain.
 
@@ -68,22 +68,22 @@ rules, and audit logs.
 ## 3. Storage abstraction with pluggable adapters
 
 ### Context
-We need a deterministic scripted demo (which must run fast and leave no file side effects for
+The system needs a deterministic scripted demo (which must run fast and leave no file side effects for
 easy testing) and a durable interactive menu (which must save records across runs).
 
 ### Decision
-We use a repository interface (`DigitalIdRepository`) and inject the storage adapter at startup
+A repository interface (`DigitalIdRepository`) is used, and the storage adapter is injected at startup
 based on CLI arguments:
 1. `InMemoryRepository`: A volatile dictionary store used for tests and the scripted demo.
 2. `JsonBackedRepository`: A file store that serializes records to a JSON file on every update.
 
 ### Rationale
-Injecting repository adapters lets us use the exact same service and domain code for both modes.
+Injecting repository adapters allows using the exact same service and domain code for both modes.
 The core logic does not need to know how or where the data is stored, which keeps tests fast and
 isolated.
 
 ### Alternatives
-- SQLite and SQLAlchemy ORM: We considered using a local SQLite database. We rejected this because a
+- SQLite and SQLAlchemy ORM: Using a local SQLite database was considered but rejected because a
   relational database introduces external dependencies and migration scripts. For a coursework
   project, JSON serialization is simple to read, easy for markers to inspect on disk, and fully
   handles database persistence.
@@ -107,8 +107,8 @@ minor performance bottleneck, the interactive console volume is very low, making
 more important than raw I/O speed.
 
 ### Alternatives
-- Asynchronous batching: We considered buffering logs in memory and writing them to disk periodically.
-  We rejected this because an unexpected crash or process exit would lose the last security events,
+- Asynchronous batching: Buffering logs in memory and writing them to disk periodically was considered.
+  This was rejected because an unexpected crash or process exit would lose the last security events,
   which ruins system audit accountability.
 
 ---
@@ -129,7 +129,7 @@ render tables and inputs, but holds no references to mutating domain methods, pr
 from corrupting database records.
 
 ### Alternatives
-- Returning aggregates directly: We rejected this to keep a clean boundary between UI display logic
+- Returning aggregates directly: This option was rejected to maintain a clean boundary between UI display logic
   and core state mutation.
 
 ---
@@ -154,7 +154,7 @@ This architecture implements data minimization. Third parties get only the yes-o
 keeping personal information safe inside the central registry.
 
 ### Alternatives
-- Exposing the full record: We rejected allowing external services to retrieve full profiles.
+- Exposing the full record: Allowing external services to retrieve full profiles was rejected.
   It creates unnecessary security risks and leaks personal data to unauthorized parties.
 
 ---
@@ -162,7 +162,7 @@ keeping personal information safe inside the central registry.
 ## 7. Irreversible revocation and idempotent status changes
 
 ### Context
-We must handle repetitive status changes and modifications to terminated profiles in a safe,
+The system must handle repetitive status changes and modifications to terminated profiles in a safe,
 predictable way without crashing the system.
 
 ### Decision
@@ -177,5 +177,5 @@ guarantees that revoked records cannot be manipulated. Handling duplicate status
 no-ops simplifies the client code, removing the need for pre-checks and preventing race conditions.
 
 ### Alternatives
-- Throwing exceptions on duplicate status changes: We rejected this because it forces the caller
+- Throwing exceptions on duplicate status changes: This was rejected because it forces the caller
   to use fragile "check-then-act" patterns that are prone to errors in concurrent environments.

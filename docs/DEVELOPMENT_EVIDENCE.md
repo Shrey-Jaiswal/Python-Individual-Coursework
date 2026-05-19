@@ -3,7 +3,7 @@
 This document records the incremental development steps used to build the Digital Identity
 Control System (DICS).
 
-We organized development into discrete, labeled tickets across three weekly sprints. Progress
+Development was organized into discrete, labeled tickets across three weekly sprints. Progress
 was managed in `issues.csv` and updated on a central GitHub Project Board using synchronization
 scripts.
 
@@ -101,7 +101,7 @@ To maintain clean repository history:
 
 ## Project board automation
 
-We synchronized the project board using automation scripts that read `issues.csv` and interact
+The project board was synchronized using automation scripts that read `issues.csv` and interact
 with the GitHub API:
 
 ```bash
