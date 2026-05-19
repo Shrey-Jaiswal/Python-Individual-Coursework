@@ -48,31 +48,18 @@ def run_scripted_demo(
     context: DemoContext,
     audit_path: Path | None = None,
     output: Callable[[str], None] | None = None,
-    style: str = "compact",
 ) -> list[str]:
     lines: list[str] = []
     step = 0
-    style_key = style.lower().strip()
 
     def emit(message: str) -> None:
         lines.append(message)
         if output is not None:
             output(message)
 
-    def emit_header() -> None:
-        if style_key == "pretty":
-            emit("=== Scripted demo ===")
-            emit("")
-            emit("Steps:")
-            return
-        emit("Scripted demo")
-
     def emit_step(label: str, outcome: str) -> None:
         nonlocal step
         step += 1
-        if style_key == "pretty":
-            emit(f"  {step:02d}. {label:<36} [{outcome}]")
-            return
         emit(f"{step:02d} {label:<30} {outcome}")
 
     def format_expected(eligible: bool, expected: bool) -> str:
@@ -80,7 +67,7 @@ def run_scripted_demo(
         suffix = "expected" if eligible == expected else "unexpected"
         return f"{status} ({suffix})"
 
-    emit_header()
+    emit("Scripted demo")
 
     identity = IdentityAttributes(
         digital_id="did-1",
@@ -223,13 +210,7 @@ def run_scripted_demo(
     else:
         export_label = "skipped"
 
-    if style_key == "pretty":
-        emit("")
-        emit("Audit:")
-        emit(f"  Entries recorded: {audit_entries}")
-        emit(f"  Exported to: {export_label}")
-    else:
-        emit(f"Audit entries: {audit_entries}")
-        emit(f"Audit export: {export_label}")
+    emit(f"Audit entries: {audit_entries}")
+    emit(f"Audit export: {export_label}")
 
     return lines
