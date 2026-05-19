@@ -85,6 +85,14 @@ def test_create_identity_rejects_bad_date() -> None:
         service.create_identity(bad, make_mutable(), Role.CENTRAL)
 
 
+def test_create_identity_rejects_bad_mutable() -> None:
+    service = make_service()
+    identity = make_identity()
+    bad_mutable = make_mutable(email="invalid")
+    with pytest.raises(ValidationError):
+        service.create_identity(identity, bad_mutable, Role.CENTRAL)
+
+
 def test_update_mutable_idempotent() -> None:
     service = make_service()
     identity = make_identity()
@@ -104,6 +112,15 @@ def test_update_mutable_rejects_revoked() -> None:
 
     with pytest.raises(IdentityUpdateNotAllowedError):
         service.update_mutable(identity.digital_id, make_mutable(name="New"), Role.CENTRAL)
+
+
+def test_update_mutable_rejects_invalid_fields() -> None:
+    service = make_service()
+    identity = make_identity()
+    service.create_identity(identity, make_mutable(), Role.CENTRAL)
+
+    with pytest.raises(ValidationError):
+        service.update_mutable(identity.digital_id, make_mutable(phone="000-000"), Role.CENTRAL)
 
 
 def test_change_status_rejects_invalid_transition() -> None:
