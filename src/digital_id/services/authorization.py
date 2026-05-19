@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from digital_id.domain.status import Status
 
@@ -11,7 +11,7 @@ class AuthorizationError(Exception):
     pass
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     CENTRAL = "central_authority"
     LOCAL = "local_authority"
     AUDITOR = "auditor"
@@ -37,4 +37,6 @@ class AuthorizationService:
 
     def ensure_can_change(self, role: Role, current: Status, target: Status) -> None:
         if not self.can_change_status(role, current, target):
-            raise AuthorizationError(f"Role {role.value} cannot change {current.value} -> {target.value}")
+            raise AuthorizationError(
+                f"Role {role.value} cannot change {current.value} -> {target.value}"
+            )
