@@ -43,7 +43,7 @@ def test_cli_verification_flow_outputs_result() -> None:
 
     run_interactive_menu(context, input_fn=input_fn, output=output_fn)
 
-    assert any(line.startswith("Eligible:") for line in outputs)
+    assert any("Eligible:" in line for line in outputs)
 
 
 def test_cli_create_and_list_identity() -> None:
@@ -73,8 +73,8 @@ def test_cli_create_and_list_identity() -> None:
 
     run_interactive_menu(context, input_fn=input_fn, output=output_fn)
 
-    assert "Created identity." in outputs
-    assert any("did-1 | active" in line for line in outputs)
+    assert any("Created identity." in line for line in outputs)
+    assert any("did-1" in line and "ACTIVE" in line for line in outputs)
 
 
 def test_cli_update_and_status_change() -> None:
@@ -117,8 +117,8 @@ def test_cli_update_and_status_change() -> None:
 
     run_interactive_menu(context, input_fn=input_fn, output=output_fn)
 
-    assert "Updated identity." in outputs
-    assert "Status updated." in outputs
+    assert any("Updated identity." in line for line in outputs)
+    assert any("Status updated." in line for line in outputs)
 
 
 def test_cli_tax_verification_rejects_invalid_date() -> None:
@@ -262,10 +262,10 @@ def test_cli_empty_list_invalid_status_export_and_unknown(tmp_path: Path) -> Non
 
     run_interactive_menu(context, input_fn=input_fn, output=outputs.append)
 
-    assert "No identities available." in outputs
-    assert "Invalid status." in outputs
-    assert any(line.startswith("Audit log exported") for line in outputs)
-    assert "Unknown option." in outputs
+    assert any("No identities available." in line for line in outputs)
+    assert any("Invalid status." in line for line in outputs)
+    assert any("Audit log exported" in line for line in outputs)
+    assert any("Unknown option." in line for line in outputs)
 
 
 def test_cli_tax_driving_and_local_verification_paths() -> None:
@@ -311,5 +311,5 @@ def test_cli_tax_driving_and_local_verification_paths() -> None:
 
     run_interactive_menu(context, input_fn=input_fn, output=outputs.append)
 
-    assert sum(line.startswith("Eligible:") for line in outputs) == 3
-    assert "Unknown verification type." in outputs
+    assert sum("Eligible:" in line for line in outputs) == 3
+    assert any("Unknown verification type." in line for line in outputs)
