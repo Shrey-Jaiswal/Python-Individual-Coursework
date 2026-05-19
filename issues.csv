@@ -67,7 +67,7 @@ Acceptance Criteria:
 - deterministic handling of repeated operations
 - idempotent behavior documented
 
-Rubric focus: Functionality, Reliability","application;rules","Todo"
+Rubric focus: Functionality, Reliability","application;rules","In Progress"
 "Verification strategies (org-specific)","Goal: implement per-organisation verification rules.
 
 Scope:
