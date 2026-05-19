@@ -47,7 +47,7 @@ def test_identity_service_records_audit_entries() -> None:
 
 def test_verification_service_records_audit_entries() -> None:
     log = AuditLog()
-    verification = VerificationService(audit_log=log)
+    repo = InMemoryRepository()
 
     identity = make_identity()
     mutable = make_mutable()
@@ -55,9 +55,12 @@ def test_verification_service_records_audit_entries() -> None:
     from digital_id.domain import DigitalId
 
     did = DigitalId(identity=identity, mutable=mutable)
-    verification.verify_bank_employer(did, role=Role.BANK_EMPLOYER)
+    repo.add(did)
+    verification = VerificationService(repo, audit_log=log)
+    verification.verify_bank_employer(identity.digital_id, role=Role.BANK_EMPLOYER)
 
     entries = log.list_all()
     assert len(entries) == 1
     assert entries[0].action == "verify_bank"
     assert entries[0].actor == Role.BANK_EMPLOYER.value
+    assert entries[0].details["outcome"] == "passed"

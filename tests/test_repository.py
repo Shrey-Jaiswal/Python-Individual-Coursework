@@ -1,9 +1,17 @@
 import json
+from datetime import date, datetime
 from pathlib import Path
 
 import pytest
 
-from digital_id.domain import DigitalId, IdentityAttributes, MutableAttributes
+from digital_id.domain import (
+    DigitalId,
+    IdentityAttributes,
+    MutableAttributes,
+    Restriction,
+    Status,
+)
+from digital_id.domain.history import StatusHistoryEntry
 from digital_id.persistence import (
     DuplicateIdentityError,
     InMemoryRepository,
@@ -34,8 +42,9 @@ def test_repository_add_and_get() -> None:
     identity = make_identity("did-1", "nat-1")
     repo.add(identity)
 
-    assert repo.get_by_id("did-1") is identity
-    assert repo.get_by_national_id("nat-1") is identity
+    assert repo.get_by_id("did-1") == identity
+    assert repo.get_by_national_id("nat-1") == identity
+    assert repo.get_by_id("did-1") is not identity
 
 
 def test_repository_duplicate_rejected() -> None:
@@ -51,15 +60,60 @@ def test_repository_remove_missing_raises() -> None:
         repo.remove("missing")
 
 
+def test_repository_returns_defensive_copies() -> None:
+    repo = InMemoryRepository()
+    identity = make_identity("did-1", "nat-1")
+    repo.add(identity)
+
+    loaded = repo.get_by_id("did-1")
+    loaded.mutable.name = "Tampered"
+
+    assert repo.get_by_id("did-1").mutable.name == "Ava Example"
+
+
 def test_json_store_roundtrip(tmp_path: Path) -> None:
     store = JsonStore(tmp_path / "ids.json")
     identity = make_identity("did-1", "nat-1")
+    identity.status = Status.SUSPENDED
+    identity.restrictions = [Restriction("travel_hold", start=date(2026, 1, 1))]
+    identity.status_history = [
+        StatusHistoryEntry(
+            from_status=Status.ACTIVE,
+            to_status=Status.SUSPENDED,
+            changed_at=datetime(2026, 1, 1, 9, 0),
+            reason="review",
+        )
+    ]
     store.save([identity])
 
     loaded = store.load()
     assert len(loaded) == 1
     assert loaded[0].identity.digital_id == "did-1"
     assert loaded[0].identity.national_id == "nat-1"
+    assert loaded[0].status is Status.SUSPENDED
+    assert loaded[0].restrictions[0].name == "travel_hold"
+    assert loaded[0].status_history[0].reason == "review"
+
+
+def test_json_store_loads_missing_file_as_empty(tmp_path: Path) -> None:
+    store = JsonStore(tmp_path / "missing.json")
+
+    assert store.load() == []
+
+
+def test_json_store_rejects_invalid_json(tmp_path: Path) -> None:
+    path = tmp_path / "ids.json"
+    path.write_text("{not json", encoding="utf-8")
+
+    with pytest.raises(PersistenceError):
+        JsonStore(path).load()
+
+
+def test_json_store_save_rejects_unwritable_target(tmp_path: Path) -> None:
+    store = JsonStore(tmp_path)
+
+    with pytest.raises(PersistenceError):
+        store.save([make_identity("did-1", "nat-1")])
 
 
 def test_json_store_rejects_schema_version(tmp_path: Path) -> None:
@@ -111,6 +165,108 @@ def test_json_store_rejects_invalid_status(tmp_path: Path) -> None:
 
     with pytest.raises(PersistenceError):
         store.load()
+
+
+def test_json_store_rejects_invalid_identity_fields(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "identities": [
+            {
+                "identity": {
+                    "digital_id": " ",
+                    "national_id": "nat-1",
+                    "date_of_birth": "1990-01-01",
+                },
+                "mutable": {
+                    "name": "Ava Example",
+                    "address": "1 High Street",
+                    "email": "ava@example.com",
+                    "phone": "0000000000",
+                },
+                "status": "active",
+                "restrictions": [],
+                "status_history": [],
+            }
+        ],
+    }
+    path = tmp_path / "ids.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(PersistenceError):
+        JsonStore(path).load()
+
+
+def test_json_store_rejects_invalid_identity_date(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "identities": [
+            {
+                "identity": {
+                    "digital_id": "did-1",
+                    "national_id": "nat-1",
+                    "date_of_birth": "bad-date",
+                },
+                "mutable": {
+                    "name": "Ava Example",
+                    "address": "1 High Street",
+                    "email": "ava@example.com",
+                    "phone": "0000000000",
+                },
+                "status": "active",
+                "restrictions": [],
+                "status_history": [],
+            }
+        ],
+    }
+    path = tmp_path / "ids.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(PersistenceError):
+        JsonStore(path).load()
+
+
+def test_json_store_rejects_invalid_identities_list(tmp_path: Path) -> None:
+    path = tmp_path / "ids.json"
+    path.write_text('{"schema_version": 1, "identities": {}}', encoding="utf-8")
+
+    with pytest.raises(PersistenceError):
+        JsonStore(path).load()
+
+
+def test_json_store_rejects_invalid_history_status(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "identities": [
+            {
+                "identity": {
+                    "digital_id": "did-1",
+                    "national_id": "nat-1",
+                    "date_of_birth": "1990-01-01",
+                },
+                "mutable": {
+                    "name": "Ava Example",
+                    "address": "1 High Street",
+                    "email": "ava@example.com",
+                    "phone": "0000000000",
+                },
+                "status": "active",
+                "restrictions": [],
+                "status_history": [
+                    {
+                        "from_status": "invalid",
+                        "to_status": "active",
+                        "changed_at": "2026-01-01T00:00:00",
+                        "reason": "bad",
+                    }
+                ],
+            }
+        ],
+    }
+    path = tmp_path / "ids.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(PersistenceError):
+        JsonStore(path).load()
 
 
 def test_json_store_rejects_invalid_dates(tmp_path: Path) -> None:

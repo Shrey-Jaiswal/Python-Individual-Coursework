@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 from digital_id.domain.errors import ImmutableAttributeError
 from digital_id.domain.history import StatusHistoryEntry
@@ -53,13 +53,21 @@ class DigitalId:
             validated.append(restriction)
         self.restrictions = validated
 
-    def change_status(self, next_status: Status, reason: str) -> None:
+    def change_status(
+        self,
+        next_status: Status,
+        reason: str,
+        changed_at: datetime | None = None,
+    ) -> bool:
+        if self.status is next_status:
+            return False
         self.status.ensure_transition(next_status)
         entry = StatusHistoryEntry(
             from_status=self.status,
             to_status=next_status,
-            changed_at=datetime.utcnow(),
+            changed_at=changed_at or datetime.now(UTC),
             reason=reason,
         )
         self.status = next_status
         self.status_history.append(entry)
+        return True

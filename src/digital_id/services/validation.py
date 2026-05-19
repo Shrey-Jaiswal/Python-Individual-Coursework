@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
 
 from digital_id.domain import (
@@ -19,17 +20,22 @@ class ValidationError(Exception):
 class ValidationService:
     """Basic validation checks used by higher-level services or CLI."""
 
+    def __init__(self, today_provider: Callable[[], date] | None = None) -> None:
+        self._today = today_provider or date.today
+
     def validate_identity(self, identity: IdentityAttributes) -> None:
-        if not identity.digital_id:
+        if not identity.digital_id.strip():
             raise ValidationError("digital_id must not be empty")
-        if not identity.national_id:
+        if not identity.national_id.strip():
             raise ValidationError("national_id must not be empty")
-        if not identity.date_of_birth:
+        if not identity.date_of_birth.strip():
             raise ValidationError("date_of_birth must not be empty")
         try:
-            date.fromisoformat(identity.date_of_birth)
+            date_of_birth = date.fromisoformat(identity.date_of_birth)
         except ValueError as exc:
             raise ValidationError("date_of_birth must be YYYY-MM-DD") from exc
+        if date_of_birth > self._today():
+            raise ValidationError("date_of_birth cannot be in the future")
 
     def validate_restriction(self, restriction: Restriction) -> None:
         try:

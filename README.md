@@ -1,16 +1,17 @@
 # Python-Individual-Coursework
 
-[![CI](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml/badge.svg)](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml)
+[![CI](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml/badge.svg?branch=shrey-branch)](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml?query=branch%3Ashrey-branch)
 [![Coverage](coverage.svg)](coverage.svg)
 
 ## GitHub repository
-https://github.com/Shrey-Jaiswal/Python-Individual-Coursework
+https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/tree/shrey-branch
 
 ## Overview
 Console-based backend for Digital ID lifecycle management. A central authority creates and
 updates identities and changes status, while other organisations only verify identities
 through role-specific rules. The system enforces deterministic rules (immutable attributes,
-status transitions, restriction validity) and records audit events for traceability.
+status transitions, restriction validity) and records both successful and denied audit events
+for traceability.
 
 ## Quick start
 ### Requirements
@@ -42,7 +43,12 @@ The scripted demo exercises representative success and failure paths:
 - create an identity and update mutable fields
 - reject a duplicate create request
 - reject an unauthorised status change
-- suspend/reactivate and run tax, driving, local authority, and bank verifications
+- treat a repeated status change as a deterministic no-op
+- add and clear restrictions through central-authority service methods
+- reject unauthorised restriction and verification requests
+- suspend/reactivate/revoke and run tax, driving, local authority, and bank verifications
+- show tax verification using status history, not only current status
+- show missing identity lookup and update-after-revoked rejection
 - export an audit log with all recorded actions
 
 ## Architecture overview
@@ -70,13 +76,18 @@ graph TD
 - Driving licence: identity must be active and have no active restrictions matching
 	licence-related keywords.
 - Local authority: identity must be active and address must match a required locality.
-- Bank/employer: validity-only response (active vs not active).
+- Bank/employer: validity-only response (active vs not active), with no identity attributes
+	returned to the caller.
 
 ## Rules and invariants
 - Immutable identity attributes: `digital_id`, `national_id`, `date_of_birth`.
 - Status transitions: active <-> suspended; revoked is terminal.
-- Updates on revoked identities are rejected.
-- Repeated operations are handled deterministically (idempotent where applicable).
+- Updates and restriction changes on revoked identities are rejected.
+- Restriction changes are central-authority only and are audited.
+- Repeated status operations are deterministic no-ops.
+- Verification requests accept only a `digital_id`; the service resolves records internally and
+	returns a limited `VerificationResult`.
+- Rejected/denied operations are recorded with `outcome=denied` and a reason.
 
 ## Testing and CI
 Run locally:
@@ -88,7 +99,7 @@ python -m mypy src --config-file pyproject.toml
 ```
 
 CI runs on every push and pull request (lint, type check, tests with coverage output).
-Coverage badge values are refreshed after the latest local test run.
+The test suite enforces a minimum 95% coverage threshold.
 
 ## Development evidence
 Ticket progression and status are tracked in [issues.csv](issues.csv). The overall

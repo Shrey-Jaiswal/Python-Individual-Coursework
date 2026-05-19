@@ -65,15 +65,19 @@ class JsonStore:
         identity_data = self._ensure_dict(data.get("identity", {}), "identity")
         mutable_data = self._ensure_dict(data.get("mutable", {}), "mutable")
         identity = IdentityAttributes(
-            digital_id=str(identity_data.get("digital_id", "")),
-            national_id=str(identity_data.get("national_id", "")),
-            date_of_birth=str(identity_data.get("date_of_birth", "")),
+            digital_id=self._require_str(identity_data, "digital_id", "identity"),
+            national_id=self._require_str(identity_data, "national_id", "identity"),
+            date_of_birth=self._require_iso_date(
+                identity_data,
+                "date_of_birth",
+                "identity",
+            ),
         )
         mutable = MutableAttributes(
-            name=str(mutable_data.get("name", "")),
-            address=str(mutable_data.get("address", "")),
-            email=str(mutable_data.get("email", "")),
-            phone=str(mutable_data.get("phone", "")),
+            name=self._require_str(mutable_data, "name", "mutable"),
+            address=self._require_str(mutable_data, "address", "mutable"),
+            email=self._require_str(mutable_data, "email", "mutable"),
+            phone=self._require_str(mutable_data, "phone", "mutable"),
         )
         status_value = str(data.get("status", Status.ACTIVE.value))
         try:
@@ -164,3 +168,18 @@ class JsonStore:
         if not isinstance(value, list):
             raise PersistenceError(f"Invalid JSON store format: {label} must be a list")
         return list(value)
+
+    def _require_str(self, data: dict[str, object], key: str, label: str) -> str:
+        value = data.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise PersistenceError(f"Invalid JSON store format: {label}.{key} must be text")
+        return value
+
+    def _require_iso_date(self, data: dict[str, object], key: str, label: str) -> str:
+        value = self._require_str(data, key, label)
+        try:
+            date.fromisoformat(value)
+        except ValueError as exc:
+            message = f"Invalid JSON store format: {label}.{key} must be ISO date"
+            raise PersistenceError(message) from exc
+        return value

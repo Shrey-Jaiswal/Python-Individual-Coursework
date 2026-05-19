@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import asdict
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from digital_id.domain import AuditEntry
@@ -52,6 +52,6 @@ def build_audit_entry(
         action=action,
         actor=actor,
         target_id=target_id,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         details=details,
     )
