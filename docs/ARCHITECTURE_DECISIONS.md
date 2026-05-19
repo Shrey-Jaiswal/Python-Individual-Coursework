@@ -1,59 +1,181 @@
-# Architecture Decisions
+# Architecture decisions
 
-This document outlines the core architectural and design decisions made for the Digital ID lifecycle management system, focusing on the trade-offs considered and the rationale behind the chosen approaches to satisfy the strict requirements of robustness, security, and traceability.
+This document records the core design decisions made for the Digital ID register, focusing on
+trade-offs, security, and traceability rules.
 
-## 1. Application Services Own Business Workflows
+---
 
-**Decision:** The application is split into a Domain Model layer (handling core invariants like immutable identity attributes, valid status transitions, and restriction date validations) and an Application Services layer (owning use-case workflows like creation, updates, authorization, and audit recording).
+## 1. Domain model separate from application services
 
-**Rationale:** This strict separation of concerns keeps the console/CLI layer extremely thin, ensuring that presentation logic cannot accidentally bypass business rules or authorization checks. 
+### Context
+The application must handle complex rules like role permissions, unique citizen keys, status
+lifecycles, and tax period date logic, while logging all events. The CLI needs to stay clean and
+independent of backend adjustments.
 
-**Alternative Considered:** Fat Domain Models (where the domain object itself handles saving to the repository and writing to the audit log) or Fat Controllers (where the CLI handles orchestration). We rejected these because they tightly couple persistence and side-effects with core logic, making the system harder to test deterministically and violating the Single Responsibility Principle.
+### Decision
+We split the system into three layers:
+1. Domain model (`src/digital_id/domain`): Contains pure business entities (`DigitalId` aggregate,
+   `Restriction`, `Status`) and internal validators. It does not depend on database adapters or
+   logging frameworks.
+2. Application services (`src/digital_id/services`): Coordinates workflows (`IdentityService`,
+   `VerificationService`, `AuditLog`). Services check user roles, fetch records from storage, and
+   trigger logging.
+3. CLI presentation layer (`src/digital_id/cli` & `src/digital_id/demo`): Handles terminal prompts,
+   box drawing, and automated runs.
 
-## 2. Repositories Return Defensive Copies to Protect Aggregate State
+### Rationale
+Separating the domain layer ensures that business rules are isolated. The domain model focuses
+solely on what makes an identity state valid, while services manage how records change during a
+transaction. This structure prevents the presentation layer from bypassing system checks, since
+every command must go through services that enforce authorization and validation.
 
-**Decision:** Repositories are designed to return deep or defensive copies of the `DigitalId` aggregate root, rather than returning references to the stored instances.
+### Alternatives
+- Fat Domain Model: We could have made the `DigitalId` entity write to the database and logs
+  directly. We rejected this because it makes testing the domain model difficult without setting
+  up mock databases and log files.
+- Fat CLI: We could have put the orchestration logic directly in the CLI. We rejected this
+  because it leaks security policies into the UI, making it hard to share logic between the
+  interactive menu and the scripted demo.
 
-**Rationale:** If a repository returns a reference to the mutable object stored in memory, calling code could theoretically mutate the `DigitalId` state directly without going through the Application Services. By returning copies, we enforce that all state mutations must be pushed back through the `IdentityService` using proper update methods. This guarantees that authorization checks and audit logging cannot be bypassed.
+---
 
-**Alternative Considered:** Relying on developer discipline to not mutate returned aggregates, or using frozen dataclasses for the entire aggregate. We rejected the frozen approach as it makes legitimate mutations overly complex, and rejected developer discipline as inadequate for a high-security context like Digital ID management.
+## 2. Defensive copying at repository boundaries
 
-## 3. Runtime Persistence is Adapter-Based
+### Context
+Repositories load and save the `DigitalId` aggregate. If the repository returns a direct reference
+to a stored object, calling code could change attributes (like the status history or location)
+directly in memory, bypassing the service checks.
 
-**Decision:** The persistence layer is abstracted behind a Repository interface, with two implementations: `InMemoryRepository` and `JsonBackedRepository`. The CLI dynamically selects the adapter based on startup flags.
+### Decision
+Both `InMemoryRepository` and `JsonBackedRepository` return deep copies of the `DigitalId` aggregate
+on every retrieve and list operation (using Python's `copy.deepcopy`).
 
-**Rationale:** The coursework requirements stipulate both a deterministically testable scripted demo (which needs clean state) and persistent functionality. By injecting an in-memory repository for tests and scripted demos, we guarantee fast, repeatable runs without file I/O side effects. The JSON adapter is used for persistent interactive runs.
+### Rationale
+Defensive copying keeps the stored state safe. If calling code edits a retrieved record, the change
+remains local. To make the change permanent, the caller must pass the modified aggregate or DTO
+back through the `IdentityService` update methods, which triggers permission checks, validation
+rules, and audit logs.
 
-**Alternative Considered:** Using an ORM and a SQLite database. We rejected this because a relational database introduces unnecessary external dependencies for a coursework submission that can be adequately modeled using JSON, and an ORM would over-complicate the simple document-like structure of the `DigitalId` aggregate.
+### Alternatives
+- Relying on developer discipline: We rejected this. In security systems, state boundaries must be
+  enforced by the code, not by guidelines.
+- Frozen domain objects: We considered making all domain classes immutable. We rejected this
+  because writing copy-on-write modifications for every small field edit in Python creates a lot
+  of repetitive code, which makes the codebase harder to maintain.
 
-## 4. Audit Logging is Durable When Configured
+---
 
-**Decision:** The `AuditLog` acts as an injected dependency that can either store records in memory or append them to a JSON file immediately upon action completion.
+## 3. Storage abstraction with pluggable adapters
 
-**Rationale:** The requirement for strict traceability means that both successful and denied operations must be recorded reliably. Writing to the file synchronously upon the completion of a service operation ensures that audit trails are preserved even if the application crashes.
+### Context
+We need a deterministic scripted demo (which must run fast and leave no file side effects for
+easy testing) and a durable interactive menu (which must save records across runs).
 
-**Alternative Considered:** Batch writing the audit log at the end of the application run. This was rejected because a system crash or unexpected exit would result in the loss of critical security events (like denied authorization attempts).
+### Decision
+We use a repository interface (`DigitalIdRepository`) and inject the storage adapter at startup
+based on CLI arguments:
+1. `InMemoryRepository`: A volatile dictionary store used for tests and the scripted demo.
+2. `JsonBackedRepository`: A file store that serializes records to a JSON file on every update.
 
-## 5. Services Return Immutable DTOs (IdentitySnapshots)
+### Rationale
+Injecting repository adapters lets us use the exact same service and domain code for both modes.
+The core logic does not need to know how or where the data is stored, which keeps tests fast and
+isolated.
 
-**Decision:** Instead of returning the full `DigitalId` domain aggregate to the CLI or calling services, the `IdentityService` explicitly constructs and returns immutable `IdentitySnapshot` Data Transfer Objects (DTOs).
+### Alternatives
+- SQLite and SQLAlchemy ORM: We considered using a local SQLite database. We rejected this because a
+  relational database introduces external dependencies and migration scripts. For a coursework
+  project, JSON serialization is simple to read, easy for markers to inspect on disk, and fully
+  handles database persistence.
 
-**Rationale:** Returning the domain aggregate exposes mutable methods (like `change_status`) to the presentation layer. By mapping the aggregate to a read-only snapshot, we implement strict Information Hiding. The CLI receives exactly what it needs to render output, and absolutely nothing more.
+---
 
-**Alternative Considered:** Returning the Domain Aggregate and trusting the presentation layer to treat it as read-only. This was rejected because it violates the principle of least privilege.
+## 4. Synchronous audit logs
 
-## 6. Verification Services Expose Limited Results
+### Context
+The system must log all operations, including successful edits and unauthorized/denied checks. If
+the system crashes, no recent security logs should be lost.
 
-**Decision:** Consuming organizations (e.g., banks, local authorities) submit only a `digital_id` and receive a simplified `VerificationResult` containing a boolean `eligible` flag and an optional reason string. The verification service never returns the `IdentitySnapshot`.
+### Decision
+The `AuditLog` service appends entries to the target JSON file synchronously before a service transaction
+completes and returns.
 
-**Rationale:** This decision aligns with the principle of data minimization and the specific scenario requirements. A bank checking employment validity only needs to know if the ID is active; they do not need the citizen's date of birth or address.
+### Rationale
+Synchronous file updates make the audit trail crash resilient. A security event (like a blocked
+access attempt) is saved to disk before the method returns. Although synchronous file writing is a
+minor performance bottleneck, the interactive console volume is very low, making data safety far
+more important than raw I/O speed.
 
-**Alternative Considered:** Returning the full `IdentitySnapshot` and allowing the consuming organization to write their own eligibility checks. This was rejected because it leaks PII (Personally Identifiable Information) to organizations that do not have the authorization to view it, violating core security requirements.
+### Alternatives
+- Asynchronous batching: We considered buffering logs in memory and writing them to disk periodically.
+  We rejected this because an unexpected crash or process exit would lose the last security events,
+  which ruins system audit accountability.
 
-## 7. Deterministic Conflict Handling and Terminal States
+---
 
-**Decision:** Repeated operations (like setting the status to ACTIVE when it is already ACTIVE) are treated as deterministic no-ops. Revocation is modeled as a strict terminal state where any subsequent mutation throws an exception.
+## 5. Read-only DTO snapshots for presentation
 
-**Rationale:** Deterministic no-ops simplify the client code, as they do not need to pre-check status before requesting a change. Strict terminal states ensure that compromised or permanently invalidated identities cannot be surreptitiously reactivated or modified, protecting system integrity.
+### Context
+Exposing the mutable domain aggregate `DigitalId` to the CLI leaks internal mutating methods (like
+`change_status` or `update_mutable`) directly to the presentation code.
 
-**Alternative Considered:** Throwing errors on repeated operations (e.g., throwing an error if trying to suspend an already suspended account). This was rejected as it forces the client into a "check-then-act" pattern, which is prone to race conditions in concurrent environments.
+### Decision
+The `IdentityService` never returns domain aggregates to the presentation layer. Instead, it maps
+records to read-only `IdentitySnapshot` DTOs before returning them.
+
+### Rationale
+Using read-only DTOs protects the domain layer. The CLI receives exactly the values it needs to
+render tables and inputs, but holds no references to mutating domain methods, preventing UI bugs
+from corrupting database records.
+
+### Alternatives
+- Returning aggregates directly: We rejected this to keep a clean boundary between UI display logic
+  and core state mutation.
+
+---
+
+## 6. Minimal verification responses for privacy
+
+### Context
+External organizations need to verify citizen status. However, returning a full profile (Name, DOB,
+address, restrictions) leaks private information, violating privacy requirements.
+
+### Decision
+The `VerificationService` never returns aggregates or snapshots to external checkers. Instead, it
+evaluates business rules internally and returns a simple `VerificationResult` containing:
+1. `eligible`: A true-or-false flag.
+2. `reason`: A short, non-detailed explanation (for example, `"Active restriction blocks driving"`).
+
+For the commercial Bank/Employer verifier, the service hides the reason string entirely, returning
+only the boolean eligibility flag.
+
+### Rationale
+This architecture implements data minimization. Third parties get only the yes-or-no answer they need,
+keeping personal information safe inside the central registry.
+
+### Alternatives
+- Exposing the full record: We rejected allowing external services to retrieve full profiles.
+  It creates unnecessary security risks and leaks personal data to unauthorized parties.
+
+---
+
+## 7. Irreversible revocation and idempotent status changes
+
+### Context
+We must handle repetitive status changes and modifications to terminated profiles in a safe,
+predictable way without crashing the system.
+
+### Decision
+1. Irreversible revocation: Once an identity is set to `REVOKED`, it is locked. Any attempt to
+   reactivate the record, edit its profile, or add restrictions throws a domain exception.
+2. Safe no-ops: Attempting to set an identity status to its current status (such as active to
+   active) is handled as a safe no-op. The system logs the attempt and returns successfully.
+
+### Rationale
+A revoked account represents a permanently compromised or retired credential. Locking it permanently
+guarantees that revoked records cannot be manipulated. Handling duplicate status changes as safe
+no-ops simplifies the client code, removing the need for pre-checks and preventing race conditions.
+
+### Alternatives
+- Throwing exceptions on duplicate status changes: We rejected this because it forces the caller
+  to use fragile "check-then-act" patterns that are prone to errors in concurrent environments.
