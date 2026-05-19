@@ -42,6 +42,7 @@ class IdentityService:
     ) -> DigitalId:
         self._ensure_central(role)
         self._validator.validate_identity(identity)
+        self._validator.validate_mutable(mutable)
 
         existing = self._find_existing(identity)
         if existing is not None:
@@ -64,6 +65,7 @@ class IdentityService:
         identity = self._repository.get_by_id(digital_id)
         if identity.status is Status.REVOKED:
             raise IdentityUpdateNotAllowedError("Cannot update a revoked identity.")
+        self._validator.validate_mutable(updates)
         if updates == identity.mutable:
             return identity
 

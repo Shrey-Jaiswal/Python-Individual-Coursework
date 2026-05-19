@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from datetime import date
 
-from digital_id.domain import IdentityAttributes, InvalidRestrictionError, Restriction
+from digital_id.domain import (
+    IdentityAttributes,
+    InvalidRestrictionError,
+    MutableAttributes,
+    Restriction,
+)
 
 
 class ValidationError(Exception):
@@ -31,3 +36,25 @@ class ValidationService:
             restriction.validate()
         except InvalidRestrictionError as exc:
             raise ValidationError(str(exc)) from exc
+
+    def validate_mutable(self, mutable: MutableAttributes) -> None:
+        name = mutable.name.strip()
+        if not name:
+            raise ValidationError("name must not be empty")
+
+        address = mutable.address.strip()
+        if not address:
+            raise ValidationError("address must not be empty")
+
+        email = mutable.email.strip()
+        if not email:
+            raise ValidationError("email must not be empty")
+        if "@" not in email or "." not in email:
+            raise ValidationError("email must contain @ and .")
+
+        phone = mutable.phone.strip()
+        if not phone:
+            raise ValidationError("phone must not be empty")
+        normalized = phone[1:] if phone.startswith("+") else phone
+        if not normalized.isdigit():
+            raise ValidationError("phone must contain digits only")
