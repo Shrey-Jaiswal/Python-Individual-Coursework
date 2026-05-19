@@ -21,17 +21,11 @@ class AuthorizationService:
     """Simple role-based rules for status transitions.
 
     - `CENTRAL` may perform any transition.
-    - `LOCAL` may suspend/reactivate but not revoke.
-    - `AUDITOR` may only view.
+    - Other roles may only verify and cannot change status.
     """
 
     def can_change_status(self, role: Role, current: Status, target: Status) -> bool:
         if role is Role.CENTRAL:
-            return True
-        if role is Role.LOCAL:
-            # Local authority can suspend or reactivate, but cannot revoke.
-            if target is Status.REVOKED:
-                return False
             return True
         return False
 
