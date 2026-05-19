@@ -3,6 +3,8 @@
 [![CI](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml?query=branch%3Amain)
 [![Coverage](coverage.svg)](coverage.svg)
 
+**GitHub Repository**: [https://github.com/Shrey-Jaiswal/Python-Individual-Coursework](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework)
+
 This is a console backend for managing digital identities and running verification checks.
 
 The system acts as a central registry for citizen identities, enforcing status transitions,
@@ -233,7 +235,7 @@ python -m digital_id \
 
 ## Testing and code quality
 
-We verify correct system behavior and rules through automated tests, linting, and static typing checks.
+Correct system behavior and rules are verified through automated tests, linting, and static typing checks.
 
 ### Running tests
 The test suite covers happy paths, edge cases, date boundaries, and role rejections:
@@ -261,6 +263,6 @@ python -m mypy src --config-file pyproject.toml
 ## Development log and Git history
 
 This project followed incremental development steps:
-- Sprints: Chronological progress is documented in [DEVELOPMENT_EVIDENCE.md](docs/DEVELOPMENT_EVIDENCE.md).
+- Development log: Tickets and commit progression are documented in [DEVELOPMENT_EVIDENCE.md](docs/DEVELOPMENT_EVIDENCE.md).
 - Issue list: Ticket statuses are listed in [issues.csv](issues.csv) and updated on the board.
 - Continuous Integration: GitHub Actions runs all tests, type checks, and linters on every commit.
