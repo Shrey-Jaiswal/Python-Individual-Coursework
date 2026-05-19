@@ -125,6 +125,19 @@ def run_scripted_demo(
         revoke_outcome = "REJECTED (expected)"
     emit_step("Unauthorized revoke", revoke_outcome)
 
+    try:
+        context.verification_service.verify_tax(
+            created,
+            period_start=date(2026, 1, 1),
+            period_end=date(2026, 3, 31),
+            role=Role.BANK_EMPLOYER,
+            as_of=date(2026, 4, 1),
+        )
+        verify_outcome = "ACCEPTED (unexpected)"
+    except AuthorizationError:
+        verify_outcome = "REJECTED (expected)"
+    emit_step("Unauthorized verification", verify_outcome)
+
     context.identity_service.change_status(
         created.identity.digital_id,
         Status.SUSPENDED,
