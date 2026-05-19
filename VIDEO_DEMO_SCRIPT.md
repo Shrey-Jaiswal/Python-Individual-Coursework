@@ -26,6 +26,7 @@ Show the system behavior and justify design decisions clearly, aligned to the ru
 **On screen:**
 - Scroll to the Mermaid diagram in README.
 - Point out key modules: `digital_id.domain`, `digital_id.services`, `digital_id.persistence`, `digital_id.demo`.
+- Open `docs/ARCHITECTURE_DECISIONS.md` and briefly point to service ownership, defensive repository copies, DTOs, persistent adapters, and limited verification responses.
 
 ---
 
@@ -51,6 +52,7 @@ python -m digital_id --scripted-only --audit-path audit_log.json
 - "Bank/employer receives a validity-only response."
 - "Missing identity lookup and update-after-revoked are rejected in defined ways."
 - "Successful, failed, and denied audit entries are recorded and exported to JSON."
+- "The interactive runtime can also use JSON-backed identity storage and durable audit logging with `--store-path` and `--audit-path`."
 
 **On screen:**
 - Open `audit_log.json` and show a few entries (creation, update, status change, verification).
@@ -59,7 +61,7 @@ python -m digital_id --scripted-only --audit-path audit_log.json
 
 ### 5:30 - 7:00 Rules and determinism
 **Voiceover:**
-"Key rules are deterministic: identity attributes like digital ID, national ID, and date of birth are immutable; status transitions allow active and suspended to move, while revoked is terminal; repeated status changes are no-ops; and updates or restriction changes on revoked identities are rejected. Verification receives only a digital ID and returns a limited result, so consuming organisations do not handle the full identity record."
+"Key rules are deterministic: identity attributes like digital ID, national ID, and date of birth are immutable; status transitions allow active and suspended to move, while revoked is terminal; repeated status changes are no-ops; and updates or restriction changes on revoked identities are rejected. Identity management returns immutable snapshots, while verification receives only a digital ID and returns a limited result, so consuming organisations do not handle the full identity record."
 
 **On screen:**
 - Briefly open the status and domain files to show the rule definitions (no deep dive).
