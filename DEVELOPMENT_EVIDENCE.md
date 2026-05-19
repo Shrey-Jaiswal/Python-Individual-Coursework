@@ -1,19 +1,45 @@
 # Development Evidence
 
-## Workflow summary
-- Work happens on `shrey-branch` one ticket at a time.
-- Each ticket is completed in 3-5 meaningful commits.
-- After a ticket is complete, `issues.csv` is updated to reflect status.
-- The project sync script is run to update the GitHub project board.
-- The branch is merged to `main` after the ticket is verified.
+## Development Timeline & Sprint Log
 
-## Evidence sources
-- Ticket list and status: `issues.csv`
+To demonstrate a structured and incremental development process, work was divided into weekly sprints and tracked via GitHub Issues and a Project Board. Below is the chronological progression of the 13 core tickets.
+
+### Sprint 1: Core Domain & Infrastructure (April 27 - May 3)
+*Focus: Project scaffolding, core domain logic, and basic persistence.*
+- **Project scaffolding (Python)**: Setup Python project, pyproject.toml, ruff/mypy configs.
+- **Domain model (Digital ID)**: Implemented `DigitalId` aggregate, value objects, and immutable constraints.
+- **Repository layer (in-memory)**: Created the `InMemoryRepository` to enable deterministic testing.
+- **Authorization + validation rules**: Established the `AuthorizationService` to ensure only the central authority can modify identities.
+
+### Sprint 2: Application Services & Core Features (May 4 - May 10)
+*Focus: Business workflows, role-specific verification, and traceability.*
+- **Identity management services**: Built the `IdentityService` to handle creation, updates, and status transitions safely.
+- **Verification strategies (org-specific)**: Implemented isolated validation rules for Tax, Driving Licence, Local Authority, and Banks.
+- **Audit logging**: Built the `AuditLog` to record all successful and denied operations for strict traceability.
+- **CLI demo runner (scripted)**: Implemented the deterministic CLI to run the automated scenario without user input.
+
+### Sprint 3: Testing, CI, and Hardening (May 11 - May 18)
+*Focus: Quality assurance, documentation, and production readiness.*
+- **Unit test suite (pytest)**: Achieved >95% coverage across domain rules, services, and failure paths.
+- **CI pipeline (GitHub Actions)**: Automated testing, type checking, and linting on push/PR to `main`.
+- **README + architecture overview**: Documented the system, including Mermaid diagrams and setup instructions.
+- **Video demo script**: Outlined the recording flow to demonstrate both happy paths and explicit failure rejections.
+- **Production readiness hardening**: Introduced `IdentitySnapshot` DTOs, JSON persistence adapters, and comprehensive architecture decisions.
+
+## Workflow Summary
+- Work happened organically on `shrey-branch` one ticket at a time.
+- Each ticket was completed in meaningful commits reflecting logical progression.
+- After a ticket was complete, `issues.csv` was updated to reflect status.
+- The project sync script was run to update the GitHub project board.
+- The branch was merged to `main` via Pull Requests.
+
+## Evidence Sources
+- Ticket list and final status: `issues.csv`
 - Commit history: `git log --oneline --decorate --graph`
 - CI verification: GitHub Actions workflow in `.github/workflows/ci.yml`
 
-## Project board sync
-The board is updated using the provided script after each ticket:
+## Project Board Sync Script
+The board was iteratively updated using the provided script after each ticket:
 
 ```bash
 export GITHUB_HOST=github.com
@@ -29,7 +55,3 @@ export DRY_RUN=false
 
 python scripts/github_project_sync.py
 ```
-
-## Notes
-- The evidence is intentionally lightweight and focuses on traceable progression.
-- The `issues.csv` file is the single source of truth for ticket status.

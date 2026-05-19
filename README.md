@@ -1,6 +1,6 @@
 # Python-Individual-Coursework
 
-[![CI](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml/badge.svg?branch=shrey-branch)](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml?query=branch%3Ashrey-branch)
+[![CI](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/actions/workflows/ci.yml?query=branch%3Amain)
 [![Coverage](coverage.svg)](coverage.svg)
 
 ## GitHub repository
@@ -124,6 +124,7 @@ python -m mypy src --config-file pyproject.toml
 
 CI runs on every push and pull request (lint, type check, tests with coverage output).
 The test suite enforces a minimum 95% coverage threshold.
+*(Note: `pytest` is used as the standard Python-ecosystem equivalent to the JUnit framework)*
 
 ## Development evidence
 Ticket progression and status are tracked in [issues.csv](issues.csv). The overall
