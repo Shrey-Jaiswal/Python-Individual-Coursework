@@ -88,3 +88,8 @@ python -m mypy src --config-file pyproject.toml
 ```
 
 CI runs on every push and pull request (lint, type check, tests with coverage output).
+
+## Development evidence
+Ticket progression and status are tracked in [issues.csv](issues.csv). The overall
+workflow and board sync process are documented in
+[DEVELOPMENT_EVIDENCE.md](DEVELOPMENT_EVIDENCE.md).
