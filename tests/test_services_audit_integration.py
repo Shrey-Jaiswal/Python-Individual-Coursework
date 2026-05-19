@@ -18,10 +18,10 @@ def make_identity() -> IdentityAttributes:
     )
 
 
-def make_mutable() -> MutableAttributes:
+def make_mutable(address: str = "1 High Street") -> MutableAttributes:
     return MutableAttributes(
         name="Ava Example",
-        address="1 High Street",
+        address=address,
         email="ava@example.com",
         phone="0000000000",
     )

@@ -1,7 +1,6 @@
+import json
 from datetime import datetime
 from pathlib import Path
-
-import json
 
 from digital_id.domain import AuditEntry
 from digital_id.services import AuditLog, build_audit_entry
