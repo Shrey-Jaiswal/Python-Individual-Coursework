@@ -1,0 +1,40 @@
+"""Authorization rules for actors performing operations on Digital IDs."""
+
+from __future__ import annotations
+
+from enum import Enum
+
+from digital_id.domain.status import Status
+
+
+class AuthorizationError(Exception):
+    pass
+
+
+class Role(str, Enum):
+    CENTRAL = "central_authority"
+    LOCAL = "local_authority"
+    AUDITOR = "auditor"
+
+
+class AuthorizationService:
+    """Simple role-based rules for status transitions.
+
+    - `CENTRAL` may perform any transition.
+    - `LOCAL` may suspend/reactivate but not revoke.
+    - `AUDITOR` may only view.
+    """
+
+    def can_change_status(self, role: Role, current: Status, target: Status) -> bool:
+        if role is Role.CENTRAL:
+            return True
+        if role is Role.LOCAL:
+            # Local authority can suspend or reactivate, but cannot revoke.
+            if target is Status.REVOKED:
+                return False
+            return True
+        return False
+
+    def ensure_can_change(self, role: Role, current: Status, target: Status) -> None:
+        if not self.can_change_status(role, current, target):
+            raise AuthorizationError(f"Role {role.value} cannot change {current.value} -> {target.value}")
