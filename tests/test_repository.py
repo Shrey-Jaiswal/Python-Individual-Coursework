@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -74,6 +75,81 @@ def test_json_store_rejects_schema_version(tmp_path: Path) -> None:
 def test_json_store_rejects_invalid_root_format(tmp_path: Path) -> None:
     path = tmp_path / "ids.json"
     path.write_text('["not-a-dict"]', encoding="utf-8")
+
+    store = JsonStore(path)
+
+    with pytest.raises(PersistenceError):
+        store.load()
+
+
+def test_json_store_rejects_invalid_status(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "identities": [
+            {
+                "identity": {
+                    "digital_id": "did-1",
+                    "national_id": "nat-1",
+                    "date_of_birth": "1990-01-01",
+                },
+                "mutable": {
+                    "name": "Ava Example",
+                    "address": "1 High Street",
+                    "email": "ava@example.com",
+                    "phone": "0000000000",
+                },
+                "status": "invalid",
+                "restrictions": [],
+                "status_history": [],
+            }
+        ],
+    }
+    path = tmp_path / "ids.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    store = JsonStore(path)
+
+    with pytest.raises(PersistenceError):
+        store.load()
+
+
+def test_json_store_rejects_invalid_dates(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "identities": [
+            {
+                "identity": {
+                    "digital_id": "did-1",
+                    "national_id": "nat-1",
+                    "date_of_birth": "1990-01-01",
+                },
+                "mutable": {
+                    "name": "Ava Example",
+                    "address": "1 High Street",
+                    "email": "ava@example.com",
+                    "phone": "0000000000",
+                },
+                "status": "active",
+                "restrictions": [
+                    {
+                        "name": "travel_hold",
+                        "start": "bad-date",
+                        "end": None,
+                    }
+                ],
+                "status_history": [
+                    {
+                        "from_status": "active",
+                        "to_status": "suspended",
+                        "changed_at": "bad-datetime",
+                        "reason": "review",
+                    }
+                ],
+            }
+        ],
+    }
+    path = tmp_path / "ids.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
 
     store = JsonStore(path)
 

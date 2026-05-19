@@ -16,6 +16,7 @@ from digital_id.domain import (
     Status,
     StatusHistoryEntry,
 )
+from digital_id.domain.errors import InvalidRestrictionError
 from digital_id.persistence.errors import PersistenceError, SchemaVersionError
 
 _SCHEMA_VERSION = 1
@@ -75,7 +76,10 @@ class JsonStore:
             phone=str(mutable_data.get("phone", "")),
         )
         status_value = str(data.get("status", Status.ACTIVE.value))
-        status = Status(status_value)
+        try:
+            status = Status(status_value)
+        except ValueError as exc:
+            raise PersistenceError("Invalid status value in JSON store.") from exc
         restrictions_items = self._ensure_list(data.get("restrictions", []), "restrictions")
         history_items = self._ensure_list(data.get("status_history", []), "status_history")
         restrictions = [
@@ -105,7 +109,10 @@ class JsonStore:
         start = self._parse_date(data.get("start"))
         end = self._parse_date(data.get("end"))
         restriction = Restriction(name=str(data.get("name", "")), start=start, end=end)
-        restriction.validate()
+        try:
+            restriction.validate()
+        except InvalidRestrictionError as exc:
+            raise PersistenceError("Invalid restriction in JSON store.") from exc
         return restriction
 
     def _history_to_dict(self, entry: StatusHistoryEntry) -> dict[str, object]:
@@ -117,8 +124,11 @@ class JsonStore:
         }
 
     def _history_from_dict(self, data: dict[str, object]) -> StatusHistoryEntry:
-        from_status = Status(str(data.get("from_status", Status.ACTIVE.value)))
-        to_status = Status(str(data.get("to_status", Status.ACTIVE.value)))
+        try:
+            from_status = Status(str(data.get("from_status", Status.ACTIVE.value)))
+            to_status = Status(str(data.get("to_status", Status.ACTIVE.value)))
+        except ValueError as exc:
+            raise PersistenceError("Invalid status history value in JSON store.") from exc
         changed_at = self._parse_datetime(data.get("changed_at"))
         return StatusHistoryEntry(
             from_status=from_status,
@@ -130,12 +140,18 @@ class JsonStore:
     def _parse_date(self, value: object) -> date | None:
         if not value:
             return None
-        return date.fromisoformat(str(value))
+        try:
+            return date.fromisoformat(str(value))
+        except ValueError as exc:
+            raise PersistenceError("Invalid date value in JSON store.") from exc
 
     def _parse_datetime(self, value: object) -> datetime:
         if not value:
             return datetime.utcnow()
-        return datetime.fromisoformat(str(value))
+        try:
+            return datetime.fromisoformat(str(value))
+        except ValueError as exc:
+            raise PersistenceError("Invalid datetime value in JSON store.") from exc
 
     def _ensure_dict(self, value: object, label: str) -> dict[str, object]:
         if not isinstance(value, dict):
