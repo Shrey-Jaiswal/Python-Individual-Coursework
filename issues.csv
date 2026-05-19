@@ -124,7 +124,7 @@ Acceptance Criteria:
 - tests cover invalid transitions and update rules
 - coverage report generated (pytest-cov)
 
-Rubric focus: Testing & Verification","tests","Todo"
+Rubric focus: Testing & Verification","tests","Done"
 "CI pipeline (GitHub Actions)","Goal: build automated test pipeline.
 
 Scope:
@@ -170,7 +170,7 @@ Acceptance Criteria:
 - includes live CLI demo plan
 - highlights tests, coverage, and CI
 
-Rubric focus: Technical Communication","docs;video","Todo"
+Rubric focus: Technical Communication","docs;video","Done"
 "Development evidence (commits + board hygiene)","Goal: show organized development evidence.
 
 Scope:
