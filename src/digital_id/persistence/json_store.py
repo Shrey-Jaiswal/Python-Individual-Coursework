@@ -147,7 +147,7 @@ class JsonStore:
 
     def _parse_datetime(self, value: object) -> datetime:
         if not value:
-            return datetime.utcnow()
+            raise PersistenceError("Missing datetime value in JSON store.")
         try:
             return datetime.fromisoformat(str(value))
         except ValueError as exc:
