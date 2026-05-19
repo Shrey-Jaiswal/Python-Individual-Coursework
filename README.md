@@ -88,6 +88,7 @@ python -m mypy src --config-file pyproject.toml
 ```
 
 CI runs on every push and pull request (lint, type check, tests with coverage output).
+Coverage badge values are refreshed after the latest local test run.
 
 ## Development evidence
 Ticket progression and status are tracked in [issues.csv](issues.csv). The overall
