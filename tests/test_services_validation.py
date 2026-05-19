@@ -13,6 +13,20 @@ def test_validate_identity_rejects_empty_fields() -> None:
         svc.validate_identity(bad)
 
 
+def test_validate_identity_rejects_blank_national_id() -> None:
+    svc = ValidationService()
+    bad = IdentityAttributes(digital_id="did-1", national_id=" ", date_of_birth="1990-01-01")
+    with pytest.raises(ValidationError):
+        svc.validate_identity(bad)
+
+
+def test_validate_identity_rejects_blank_date_of_birth() -> None:
+    svc = ValidationService()
+    bad = IdentityAttributes(digital_id="did-1", national_id="nat-1", date_of_birth=" ")
+    with pytest.raises(ValidationError):
+        svc.validate_identity(bad)
+
+
 def test_validate_restriction_uses_domain_validation() -> None:
     svc = ValidationService()
     r = Restriction(name="r", start=date(2026, 5, 2), end=date(2026, 5, 1))
@@ -23,6 +37,13 @@ def test_validate_restriction_uses_domain_validation() -> None:
 def test_validate_identity_rejects_bad_date_format() -> None:
     svc = ValidationService()
     bad = IdentityAttributes(digital_id="did-1", national_id="nat-1", date_of_birth="bad")
+    with pytest.raises(ValidationError):
+        svc.validate_identity(bad)
+
+
+def test_validate_identity_rejects_future_date_of_birth() -> None:
+    svc = ValidationService(today_provider=lambda: date(2026, 5, 19))
+    bad = IdentityAttributes(digital_id="did-1", national_id="nat-1", date_of_birth="2999-01-01")
     with pytest.raises(ValidationError):
         svc.validate_identity(bad)
 
@@ -41,6 +62,17 @@ def test_validate_mutable_rejects_empty_fields() -> None:
     bad = make_mutable(name=" ", address=" ", email=" ", phone=" ")
     with pytest.raises(ValidationError):
         svc.validate_mutable(bad)
+
+
+def test_validate_mutable_rejects_empty_address_email_and_phone() -> None:
+    svc = ValidationService()
+
+    with pytest.raises(ValidationError):
+        svc.validate_mutable(make_mutable(address=" "))
+    with pytest.raises(ValidationError):
+        svc.validate_mutable(make_mutable(email=" "))
+    with pytest.raises(ValidationError):
+        svc.validate_mutable(make_mutable(phone=" "))
 
 
 def test_validate_mutable_rejects_bad_email() -> None:

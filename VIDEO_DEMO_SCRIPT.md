@@ -31,7 +31,7 @@ Show the system behavior and justify design decisions clearly, aligned to the ru
 
 ### 1:45 - 5:30 Scripted demo (core functionality)
 **Voiceover:**
-"I will run the scripted demo to show representative success and failure paths in a deterministic sequence. The demo creates an identity, updates mutable fields, rejects duplicate creation, rejects unauthorized status change, then demonstrates status transitions and organisation-specific verification flows. It also exports an audit log."
+"I will run the scripted demo to show representative success and failure paths in a deterministic sequence. The demo creates an identity, treats a repeated active status as a no-op, updates mutable fields, rejects duplicate creation, rejects unauthorized status and restriction changes, then demonstrates organisation-specific verification flows. It also shows missing identity handling, revoked-state protections, and audit export."
 
 **On screen (terminal):**
 ```bash
@@ -40,14 +40,17 @@ python -m digital_id --scripted-only --audit-path audit_log.json
 
 **Voiceover cues while output appears:**
 - "Create identity and update passes."
+- "Repeating the current status is handled as an explicit no-op."
 - "Duplicate creation is rejected as expected."
 - "A non-central role attempting a status change is rejected."
 - "A bank role attempting tax verification is rejected (org-level authorisation)."
-- "Tax verification fails while suspended, then passes when reactivated."
+- "Tax verification fails while suspended, and then still fails for a period where the status history shows a suspension."
+- "Restrictions are added and cleared only through the central authority service."
 - "Driving verification fails with an active restriction, then passes when cleared."
 - "Local authority check shows locality mismatch then match."
 - "Bank/employer receives a validity-only response."
-- "Audit entries are recorded and exported to JSON."
+- "Missing identity lookup and update-after-revoked are rejected in defined ways."
+- "Successful, failed, and denied audit entries are recorded and exported to JSON."
 
 **On screen:**
 - Open `audit_log.json` and show a few entries (creation, update, status change, verification).
@@ -56,7 +59,7 @@ python -m digital_id --scripted-only --audit-path audit_log.json
 
 ### 5:30 - 7:00 Rules and determinism
 **Voiceover:**
-"Key rules are deterministic: identity attributes like digital ID, national ID, and date of birth are immutable; status transitions allow active and suspended to move, while revoked is terminal; updates to revoked identities are rejected. These rules enforce consistent behavior even under repeated or conflicting requests."
+"Key rules are deterministic: identity attributes like digital ID, national ID, and date of birth are immutable; status transitions allow active and suspended to move, while revoked is terminal; repeated status changes are no-ops; and updates or restriction changes on revoked identities are rejected. Verification receives only a digital ID and returns a limited result, so consuming organisations do not handle the full identity record."
 
 **On screen:**
 - Briefly open the status and domain files to show the rule definitions (no deep dive).
@@ -65,7 +68,7 @@ python -m digital_id --scripted-only --audit-path audit_log.json
 
 ### 7:00 - 8:30 Testing and CI
 **Voiceover:**
-"Testing uses pytest with focused unit tests for domain rules, identity services, and organisation-specific verification. Continuous integration runs linting, type checks, and tests on every push and pull request."
+"Testing uses pytest with focused unit tests for domain rules, identity services, organisation-specific verification, audit denial paths, JSON persistence, and CLI flows. Continuous integration runs linting, type checks, and tests with a 95% coverage gate on every push and pull request."
 
 **On screen:**
 ```bash

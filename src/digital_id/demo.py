@@ -4,10 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
-from digital_id.domain import IdentityAttributes, MutableAttributes, Restriction, Status
+from digital_id.domain import (
+    IdentityAttributes,
+    InvalidStatusTransition,
+    MutableAttributes,
+    Restriction,
+    Status,
+)
 from digital_id.persistence import InMemoryRepository
 from digital_id.persistence.errors import DuplicateIdentityError
 from digital_id.services import (
@@ -15,6 +21,7 @@ from digital_id.services import (
     AuthorizationError,
     AuthorizationService,
     IdentityService,
+    IdentityUpdateNotAllowedError,
     Role,
     ValidationService,
     VerificationService,
@@ -34,8 +41,16 @@ def build_demo_context() -> DemoContext:
     audit_log = AuditLog()
     auth = AuthorizationService()
     validator = ValidationService()
-    identity_service = IdentityService(repository, auth, validator, audit_log)
-    verification_service = VerificationService(auth_service=auth, audit_log=audit_log)
+
+    def demo_clock() -> datetime:
+        return datetime(2026, 2, 15, 12, 0, tzinfo=UTC)
+
+    identity_service = IdentityService(repository, auth, validator, audit_log, clock=demo_clock)
+    verification_service = VerificationService(
+        repository,
+        auth_service=auth,
+        audit_log=audit_log,
+    )
     return DemoContext(
         repository=repository,
         identity_service=identity_service,
@@ -84,6 +99,14 @@ def run_scripted_demo(
     created = context.identity_service.create_identity(identity, mutable, Role.CENTRAL)
     emit_step("Create identity", "PASS")
 
+    context.identity_service.change_status(
+        created.identity.digital_id,
+        Status.ACTIVE,
+        "already active",
+        Role.CENTRAL,
+    )
+    emit_step("Repeat active status", "NO-OP (expected)")
+
     updated_mutable = MutableAttributes(
         name=mutable.name,
         address="2 High Street, London",
@@ -127,7 +150,7 @@ def run_scripted_demo(
 
     try:
         context.verification_service.verify_tax(
-            created,
+            created.identity.digital_id,
             period_start=date(2026, 1, 1),
             period_end=date(2026, 3, 31),
             role=Role.BANK_EMPLOYER,
@@ -147,7 +170,7 @@ def run_scripted_demo(
     emit_step("Suspend identity", "PASS")
 
     tax_result = context.verification_service.verify_tax(
-        created,
+        created.identity.digital_id,
         period_start=date(2026, 1, 1),
         period_end=date(2026, 3, 31),
         role=Role.TAX_AUTHORITY,
@@ -166,11 +189,38 @@ def run_scripted_demo(
     )
     emit_step("Reactivate identity", "PASS")
 
-    created.add_restriction(Restriction(name="driving_suspension", start=date(2026, 1, 1)))
-    context.repository.update(created)
+    tax_result = context.verification_service.verify_tax(
+        created.identity.digital_id,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 3, 31),
+        role=Role.TAX_AUTHORITY,
+        as_of=date(2026, 4, 1),
+    )
+    emit_step(
+        "Tax verification (history)",
+        format_expected(tax_result.eligible, expected=False),
+    )
+
+    context.identity_service.add_restriction(
+        created.identity.digital_id,
+        Restriction(name="driving_suspension", start=date(2026, 1, 1)),
+        Role.CENTRAL,
+    )
+    emit_step("Add restriction", "PASS")
+
+    try:
+        context.identity_service.add_restriction(
+            created.identity.digital_id,
+            Restriction(name="local_hold", start=date(2026, 1, 1)),
+            Role.LOCAL,
+        )
+        restriction_outcome = "ACCEPTED (unexpected)"
+    except AuthorizationError:
+        restriction_outcome = "REJECTED (expected)"
+    emit_step("Unauthorized restriction", restriction_outcome)
 
     driving_result = context.verification_service.verify_driving_licence(
-        created,
+        created.identity.digital_id,
         role=Role.DRIVING_LICENCE_AUTHORITY,
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
@@ -180,11 +230,11 @@ def run_scripted_demo(
         format_expected(driving_result.eligible, expected=False),
     )
 
-    created.replace_restrictions([])
-    context.repository.update(created)
+    context.identity_service.replace_restrictions(created.identity.digital_id, [], Role.CENTRAL)
+    emit_step("Clear restrictions", "PASS")
 
     driving_result = context.verification_service.verify_driving_licence(
-        created,
+        created.identity.digital_id,
         role=Role.DRIVING_LICENCE_AUTHORITY,
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
@@ -195,7 +245,7 @@ def run_scripted_demo(
     )
 
     local_result = context.verification_service.verify_local_authority(
-        created,
+        created.identity.digital_id,
         role=Role.LOCAL,
         required_locality="Leeds",
     )
@@ -205,7 +255,7 @@ def run_scripted_demo(
     )
 
     local_result = context.verification_service.verify_local_authority(
-        created,
+        created.identity.digital_id,
         role=Role.LOCAL,
         required_locality="London",
     )
@@ -215,13 +265,58 @@ def run_scripted_demo(
     )
 
     bank_result = context.verification_service.verify_bank_employer(
-        created,
+        created.identity.digital_id,
         role=Role.BANK_EMPLOYER,
     )
     emit_step(
         "Bank/employer check",
         format_expected(bank_result.eligible, expected=True),
     )
+
+    missing_result = context.verification_service.verify_bank_employer(
+        "missing-id",
+        role=Role.BANK_EMPLOYER,
+    )
+    emit_step(
+        "Missing identity lookup",
+        format_expected(missing_result.eligible, expected=False),
+    )
+
+    context.identity_service.change_status(
+        created.identity.digital_id,
+        Status.REVOKED,
+        "fraud confirmed",
+        Role.CENTRAL,
+    )
+    emit_step("Revoke identity", "PASS")
+
+    try:
+        context.identity_service.update_mutable(
+            created.identity.digital_id,
+            MutableAttributes(
+                name=mutable.name,
+                address="3 High Street, London",
+                email=mutable.email,
+                phone=mutable.phone,
+            ),
+            Role.CENTRAL,
+        )
+        update_revoked = "ACCEPTED (unexpected)"
+    except IdentityUpdateNotAllowedError:
+        update_revoked = "REJECTED (expected)"
+    emit_step("Update revoked identity", update_revoked)
+
+    try:
+        context.identity_service.change_status(
+            created.identity.digital_id,
+            Status.ACTIVE,
+            "appeal",
+            Role.CENTRAL,
+        )
+        reactivate_revoked = "ACCEPTED (unexpected)"
+    except InvalidStatusTransition:
+        reactivate_revoked = "REJECTED (expected)"
+    emit_step("Reactivate revoked identity", reactivate_revoked)
 
     audit_entries = len(context.audit_log.list_all())
 

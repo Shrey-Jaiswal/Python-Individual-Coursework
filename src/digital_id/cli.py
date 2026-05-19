@@ -147,12 +147,6 @@ def _handle_verification(
     choice = input_fn("Select verification: ").strip().lower()
     digital_id = input_fn("Digital ID: ").strip()
 
-    try:
-        identity = context.repository.get_by_id(digital_id)
-    except Exception as exc:
-        output(f"Error: {exc}")
-        return
-
     if choice == "a":
         try:
             period_start = _prompt_date(input_fn, "Period start (YYYY-MM-DD): ")
@@ -161,7 +155,7 @@ def _handle_verification(
             output(str(exc))
             return
         result = context.verification_service.verify_tax(
-            identity,
+            digital_id,
             period_start,
             period_end,
             role=Role.TAX_AUTHORITY,
@@ -176,20 +170,20 @@ def _handle_verification(
             else None
         )
         result = context.verification_service.verify_driving_licence(
-            identity,
+            digital_id,
             role=Role.DRIVING_LICENCE_AUTHORITY,
             restriction_keywords=keywords,
         )
     elif choice == "c":
         locality = input_fn("Required locality (optional): ").strip() or None
         result = context.verification_service.verify_local_authority(
-            identity,
+            digital_id,
             role=Role.LOCAL,
             required_locality=locality,
         )
     elif choice == "d":
         result = context.verification_service.verify_bank_employer(
-            identity,
+            digital_id,
             role=Role.BANK_EMPLOYER,
         )
     else:

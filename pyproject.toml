@@ -17,7 +17,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-q --disable-warnings --maxfail=1 --cov=src --cov-report=term-missing"
+addopts = "-q --disable-warnings --maxfail=1 --cov=src --cov-report=term-missing --cov-fail-under=95"
 
 [tool.ruff]
 line-length = 100
