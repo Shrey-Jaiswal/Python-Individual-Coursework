@@ -14,7 +14,7 @@ from digital_id.domain import (
     Restriction,
     Status,
 )
-from digital_id.persistence import InMemoryRepository
+from digital_id.persistence import DigitalIdRepository, InMemoryRepository
 from digital_id.persistence.errors import DuplicateIdentityError
 from digital_id.services import (
     AuditLog,
@@ -30,15 +30,20 @@ from digital_id.services import (
 
 @dataclass
 class DemoContext:
-    repository: InMemoryRepository
+    repository: DigitalIdRepository
     identity_service: IdentityService
     verification_service: VerificationService
     audit_log: AuditLog
 
 
-def build_demo_context() -> DemoContext:
-    repository = InMemoryRepository()
-    audit_log = AuditLog()
+def build_demo_context(
+    repository: DigitalIdRepository | None = None,
+    audit_log: AuditLog | None = None,
+) -> DemoContext:
+    if repository is None:
+        repository = InMemoryRepository()
+    if audit_log is None:
+        audit_log = AuditLog()
     auth = AuthorizationService()
     validator = ValidationService()
 
@@ -100,7 +105,7 @@ def run_scripted_demo(
     emit_step("Create identity", "PASS")
 
     context.identity_service.change_status(
-        created.identity.digital_id,
+        created.digital_id,
         Status.ACTIVE,
         "already active",
         Role.CENTRAL,
@@ -114,7 +119,7 @@ def run_scripted_demo(
         phone=mutable.phone,
     )
     context.identity_service.update_mutable(
-        created.identity.digital_id,
+        created.digital_id,
         updated_mutable,
         Role.CENTRAL,
     )
@@ -138,7 +143,7 @@ def run_scripted_demo(
 
     try:
         context.identity_service.change_status(
-            created.identity.digital_id,
+            created.digital_id,
             Status.REVOKED,
             "fraud",
             Role.LOCAL,
@@ -150,7 +155,7 @@ def run_scripted_demo(
 
     try:
         context.verification_service.verify_tax(
-            created.identity.digital_id,
+            created.digital_id,
             period_start=date(2026, 1, 1),
             period_end=date(2026, 3, 31),
             role=Role.BANK_EMPLOYER,
@@ -162,7 +167,7 @@ def run_scripted_demo(
     emit_step("Unauthorized verification", verify_outcome)
 
     context.identity_service.change_status(
-        created.identity.digital_id,
+        created.digital_id,
         Status.SUSPENDED,
         "review",
         Role.CENTRAL,
@@ -170,7 +175,7 @@ def run_scripted_demo(
     emit_step("Suspend identity", "PASS")
 
     tax_result = context.verification_service.verify_tax(
-        created.identity.digital_id,
+        created.digital_id,
         period_start=date(2026, 1, 1),
         period_end=date(2026, 3, 31),
         role=Role.TAX_AUTHORITY,
@@ -182,7 +187,7 @@ def run_scripted_demo(
     )
 
     context.identity_service.change_status(
-        created.identity.digital_id,
+        created.digital_id,
         Status.ACTIVE,
         "appeal granted",
         Role.CENTRAL,
@@ -190,7 +195,7 @@ def run_scripted_demo(
     emit_step("Reactivate identity", "PASS")
 
     tax_result = context.verification_service.verify_tax(
-        created.identity.digital_id,
+        created.digital_id,
         period_start=date(2026, 1, 1),
         period_end=date(2026, 3, 31),
         role=Role.TAX_AUTHORITY,
@@ -202,7 +207,7 @@ def run_scripted_demo(
     )
 
     context.identity_service.add_restriction(
-        created.identity.digital_id,
+        created.digital_id,
         Restriction(name="driving_suspension", start=date(2026, 1, 1)),
         Role.CENTRAL,
     )
@@ -210,7 +215,7 @@ def run_scripted_demo(
 
     try:
         context.identity_service.add_restriction(
-            created.identity.digital_id,
+            created.digital_id,
             Restriction(name="local_hold", start=date(2026, 1, 1)),
             Role.LOCAL,
         )
@@ -220,7 +225,7 @@ def run_scripted_demo(
     emit_step("Unauthorized restriction", restriction_outcome)
 
     driving_result = context.verification_service.verify_driving_licence(
-        created.identity.digital_id,
+        created.digital_id,
         role=Role.DRIVING_LICENCE_AUTHORITY,
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
@@ -230,11 +235,11 @@ def run_scripted_demo(
         format_expected(driving_result.eligible, expected=False),
     )
 
-    context.identity_service.replace_restrictions(created.identity.digital_id, [], Role.CENTRAL)
+    context.identity_service.replace_restrictions(created.digital_id, [], Role.CENTRAL)
     emit_step("Clear restrictions", "PASS")
 
     driving_result = context.verification_service.verify_driving_licence(
-        created.identity.digital_id,
+        created.digital_id,
         role=Role.DRIVING_LICENCE_AUTHORITY,
         as_of=date(2026, 2, 1),
         restriction_keywords=["driving"],
@@ -245,7 +250,7 @@ def run_scripted_demo(
     )
 
     local_result = context.verification_service.verify_local_authority(
-        created.identity.digital_id,
+        created.digital_id,
         role=Role.LOCAL,
         required_locality="Leeds",
     )
@@ -255,7 +260,7 @@ def run_scripted_demo(
     )
 
     local_result = context.verification_service.verify_local_authority(
-        created.identity.digital_id,
+        created.digital_id,
         role=Role.LOCAL,
         required_locality="London",
     )
@@ -265,7 +270,7 @@ def run_scripted_demo(
     )
 
     bank_result = context.verification_service.verify_bank_employer(
-        created.identity.digital_id,
+        created.digital_id,
         role=Role.BANK_EMPLOYER,
     )
     emit_step(
@@ -283,7 +288,7 @@ def run_scripted_demo(
     )
 
     context.identity_service.change_status(
-        created.identity.digital_id,
+        created.digital_id,
         Status.REVOKED,
         "fraud confirmed",
         Role.CENTRAL,
@@ -292,7 +297,7 @@ def run_scripted_demo(
 
     try:
         context.identity_service.update_mutable(
-            created.identity.digital_id,
+            created.digital_id,
             MutableAttributes(
                 name=mutable.name,
                 address="3 High Street, London",
@@ -308,7 +313,7 @@ def run_scripted_demo(
 
     try:
         context.identity_service.change_status(
-            created.identity.digital_id,
+            created.digital_id,
             Status.ACTIVE,
             "appeal",
             Role.CENTRAL,

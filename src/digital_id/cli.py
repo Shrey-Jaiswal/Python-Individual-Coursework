@@ -9,7 +9,8 @@ from pathlib import Path
 
 from digital_id.demo import DemoContext, build_demo_context, run_scripted_demo
 from digital_id.domain import IdentityAttributes, MutableAttributes, Status
-from digital_id.services import Role
+from digital_id.persistence import JsonBackedRepository
+from digital_id.services import AuditLog, Role
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -24,17 +25,43 @@ def main(argv: Sequence[str] | None = None) -> int:
         default="audit_log.json",
         help="Path to write audit log JSON (scripted demo)",
     )
+    parser.add_argument(
+        "--store-path",
+        help="Path to JSON identity store for persistent interactive runs",
+    )
+    parser.add_argument(
+        "--interactive-only",
+        action="store_true",
+        help="Skip the scripted demo and open the interactive menu",
+    )
     args = parser.parse_args(argv)
+    if args.scripted_only and args.interactive_only:
+        parser.error("--scripted-only and --interactive-only cannot be used together")
 
-    context = build_demo_context()
-    audit_path = Path(args.audit_path) if args.audit_path else None
-    run_scripted_demo(context, audit_path=audit_path, output=print)
+    context = (
+        _build_runtime_context(args.store_path, args.audit_path)
+        if args.interactive_only
+        else build_demo_context()
+    )
+    if not args.interactive_only:
+        audit_path = Path(args.audit_path) if args.audit_path else None
+        run_scripted_demo(context, audit_path=audit_path, output=print)
 
     if args.scripted_only:
         return 0
 
+    if args.store_path and not args.interactive_only:
+        context = _build_runtime_context(args.store_path, args.audit_path)
     run_interactive_menu(context, input_fn=input, output=print)
     return 0
+
+
+def _build_runtime_context(store_path: str | None, audit_path: str | None) -> DemoContext:
+    audit_log = AuditLog(Path(audit_path)) if audit_path else AuditLog()
+    if store_path is None:
+        return build_demo_context(audit_log=audit_log)
+    repository = JsonBackedRepository.from_path(Path(store_path))
+    return build_demo_context(repository=repository, audit_log=audit_log)
 
 
 def run_interactive_menu(
@@ -54,14 +81,14 @@ def run_interactive_menu(
         choice = input_fn("Select option: ").strip()
 
         if choice == "1":
-            identities = context.repository.list_all()
+            identities = context.identity_service.list_identities(Role.CENTRAL)
             if not identities:
                 output("No identities available.")
                 continue
             for entry in identities:
                 summary = (
-                    f"{entry.identity.digital_id} | {entry.status.value} | "
-                    f"{entry.mutable.name} | {entry.mutable.address}"
+                    f"{entry.digital_id} | {entry.status.value} | "
+                    f"{entry.name} | {entry.address}"
                 )
                 output(summary)
         elif choice == "2":
