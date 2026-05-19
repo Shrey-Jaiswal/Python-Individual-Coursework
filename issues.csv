@@ -184,3 +184,18 @@ Acceptance Criteria:
 - board statuses reflect actual work
 
 Rubric focus: Version Control & Development Evidence","process;version-control","Done"
+"Production readiness hardening","Goal: strengthen the system against top-band rubric expectations for technical readiness and maintainability.
+
+Scope:
+- JSON-backed repository for persistent CLI identity storage
+- durable audit logging when an audit path is configured
+- immutable service DTOs for management responses
+- explicit architecture decision documentation
+
+Acceptance Criteria:
+- interactive CLI can persist identities and audit events across runs
+- services do not expose mutable domain aggregates to callers
+- README and video script explain the design decisions
+- tests, lint, type checks, and coverage gate pass
+
+Rubric focus: Product Functionality, Design Quality, Testing & CI, Technical Communication","production-readiness;architecture","Done"

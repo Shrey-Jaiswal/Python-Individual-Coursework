@@ -1,4 +1,6 @@
 audit_log.json
+digital_ids.json
+data/
 
 # Python
 __pycache__/

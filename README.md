@@ -34,9 +34,21 @@ python -m digital_id --scripted-only --audit-path audit_log.json
 python -m digital_id
 ```
 
+### Persistent interactive runtime
+```bash
+python -m digital_id \
+  --interactive-only \
+  --store-path data/digital_ids.json \
+  --audit-path data/audit_log.json
+```
+This mode reloads identities from the JSON store and persists each create, update, status
+change, and restriction change. The audit log also reloads existing entries and persists
+each successful, failed, or denied action.
+
 ### Audit log
 The scripted run exports a JSON audit log (default: `audit_log.json`) that includes
-creation, updates, status changes, and verification requests.
+creation, updates, status changes, restriction changes, verification requests, and denied
+operations.
 
 ## Scripted demo summary
 The scripted demo exercises representative success and failure paths:
@@ -56,7 +68,7 @@ The scripted demo exercises representative success and failure paths:
 - `digital_id.domain`: core model (`DigitalId`, `Status`, `Restriction`, history) and invariants.
 - `digital_id.services`: application rules (identity management, verification, validation,
 	authorization, audit logging).
-- `digital_id.persistence`: repository abstraction plus in-memory storage and JSON persistence.
+- `digital_id.persistence`: repository abstraction plus in-memory and JSON-backed storage.
 - `digital_id.cli` / `digital_id.demo`: console entrypoint and deterministic demo runner.
 
 ```mermaid
@@ -66,10 +78,21 @@ graph TD
 	IdentitySvc --> Domain[Domain Model]
 	VerifySvc --> Domain
 	IdentitySvc --> Repo[Repository]
-	Repo --> JsonStore[JSON Store]
+	Repo --> JsonRepo[JSON-backed Repository]
+	JsonRepo --> JsonStore[JSON Store]
 	IdentitySvc --> Audit[Audit Log]
 	VerifySvc --> Audit
 ```
+
+## Design decisions
+Detailed design rationale is documented in
+[Architecture Decisions](docs/ARCHITECTURE_DECISIONS.md). In summary:
+- services own business workflows and audit side effects
+- repositories return defensive copies to protect aggregate state
+- persistent runtime storage is adapter-based and optional for the deterministic demo
+- audit logging is file-backed when configured with `--audit-path`
+- identity management returns immutable `IdentitySnapshot` DTOs rather than mutable aggregates
+- verification returns limited `VerificationResult` responses to consuming organisations
 
 ## Verification flows (examples)
 - Tax authority: identity must be active and the reporting period must be complete.
@@ -87,6 +110,7 @@ graph TD
 - Repeated status operations are deterministic no-ops.
 - Verification requests accept only a `digital_id`; the service resolves records internally and
 	returns a limited `VerificationResult`.
+- Identity management returns immutable snapshots instead of mutable domain aggregates.
 - Rejected/denied operations are recorded with `outcome=denied` and a reason.
 
 ## Testing and CI
