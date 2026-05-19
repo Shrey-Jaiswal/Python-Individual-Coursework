@@ -167,6 +167,68 @@ def test_main_scripted_only_exports_audit(tmp_path: Path) -> None:
     assert audit_path.exists()
 
 
+def test_main_interactive_only_uses_persistent_store(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store_path = tmp_path / "ids.json"
+    inputs = [
+        "2",
+        "did-1",
+        "nat-1",
+        "1990-01-01",
+        "Ava Example",
+        "1 High Street",
+        "ava@example.com",
+        "0000000000",
+        "0",
+    ]
+
+    def input_fn(_: str) -> str:
+        if not inputs:
+            raise AssertionError("No more inputs available")
+        return inputs.pop(0)
+
+    monkeypatch.setattr("builtins.input", input_fn)
+    monkeypatch.setattr("builtins.print", lambda *_args, **_kwargs: None)
+
+    result = main(["--interactive-only", "--store-path", str(store_path)])
+
+    assert result == 0
+    assert "did-1" in store_path.read_text(encoding="utf-8")
+
+
+def test_main_interactive_only_persists_audit_log(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audit_path = tmp_path / "audit.json"
+    inputs = [
+        "2",
+        "did-1",
+        "nat-1",
+        "1990-01-01",
+        "Ava Example",
+        "1 High Street",
+        "ava@example.com",
+        "0000000000",
+        "0",
+    ]
+
+    def input_fn(_: str) -> str:
+        if not inputs:
+            raise AssertionError("No more inputs available")
+        return inputs.pop(0)
+
+    monkeypatch.setattr("builtins.input", input_fn)
+    monkeypatch.setattr("builtins.print", lambda *_args, **_kwargs: None)
+
+    result = main(["--interactive-only", "--audit-path", str(audit_path)])
+
+    assert result == 0
+    assert "identity_created" in audit_path.read_text(encoding="utf-8")
+
+
 def test_module_entrypoint_uses_cli_main(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(digital_id.cli, "main", lambda: 0)
 

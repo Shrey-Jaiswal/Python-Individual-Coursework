@@ -15,6 +15,7 @@ from digital_id.domain.history import StatusHistoryEntry
 from digital_id.persistence import (
     DuplicateIdentityError,
     InMemoryRepository,
+    JsonBackedRepository,
     JsonStore,
     NotFoundError,
     PersistenceError,
@@ -69,6 +70,20 @@ def test_repository_returns_defensive_copies() -> None:
     loaded.mutable.name = "Tampered"
 
     assert repo.get_by_id("did-1").mutable.name == "Ava Example"
+
+
+def test_json_backed_repository_persists_mutations(tmp_path: Path) -> None:
+    path = tmp_path / "ids.json"
+    repo = JsonBackedRepository.from_path(path)
+
+    repo.add(make_identity("did-1", "nat-1"))
+    repo.update(make_identity("did-1", "nat-1"))
+
+    reloaded = JsonBackedRepository.from_path(path)
+    assert reloaded.get_by_id("did-1").identity.national_id == "nat-1"
+
+    reloaded.remove("did-1")
+    assert JsonBackedRepository.from_path(path).list_all() == []
 
 
 def test_json_store_roundtrip(tmp_path: Path) -> None:
