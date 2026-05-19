@@ -81,16 +81,10 @@ def _build_runtime_context(store_path: str | None, audit_path: str | None) -> De
 
 
 def _print_header(output: Callable[[str], None]) -> None:
-    output(
-        f"\n{CYAN}{BOLD}┌────────────────────────────────"
-        f"────────────────────────┐{RESET}"
-    )
+    output(f"\n{CYAN}{BOLD}┌────────────────────────────────────────────────────────┐{RESET}")
     output(f"{CYAN}{BOLD}│             DIGITAL IDENTITY CONTROL SYSTEM            │{RESET}")
     output(f"{CYAN}{BOLD}│              Coursework Backend Terminal               │{RESET}")
-    output(
-        f"{CYAN}{BOLD}└────────────────────────────────"
-        f"────────────────────────┘{RESET}\n"
-    )
+    output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}\n")
 
 
 def _print_success(message: str, output: Callable[[str], None]) -> None:
@@ -166,9 +160,7 @@ def run_interactive_menu(
     _print_header(output)
 
     while True:
-        output(
-            f"{CYAN}{BOLD}┌─── CONTROL CENTER ─────────────────────────────────────┐{RESET}"
-        )
+        output(f"{CYAN}{BOLD}┌─── CONTROL CENTER ─────────────────────────────────────┐{RESET}")
         output(
             f"{CYAN}{BOLD}│{RESET}  {BOLD}[1]{RESET} List All Registered Identities"
             f"                    {CYAN}{BOLD}│{RESET}"
@@ -197,13 +189,10 @@ def run_interactive_menu(
             f"{CYAN}{BOLD}│{RESET}  {BOLD}[0]{RESET} Terminate Console Session"
             f"                         {CYAN}{BOLD}│{RESET}"
         )
-        output(
-            f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}"
-        )
+        output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}")
 
         choice = input_fn(
-            f"{CYAN}{BOLD}❯{RESET} {BOLD}Select option{RESET} "
-            f"{GRAY}[0-6]{RESET}: "
+            f"{CYAN}{BOLD}❯{RESET} {BOLD}Select option{RESET} {GRAY}[0-6]{RESET}: "
         ).strip()
 
         if choice == "1":
@@ -216,13 +205,15 @@ def run_interactive_menu(
             headers = ["Digital ID", "Status", "Name", "Email", "Address"]
             rows = []
             for entry in identities:
-                rows.append([
-                    entry.digital_id,
-                    entry.status.value.upper(),
-                    entry.name,
-                    entry.email,
-                    entry.address,
-                ])
+                rows.append(
+                    [
+                        entry.digital_id,
+                        entry.status.value.upper(),
+                        entry.name,
+                        entry.email,
+                        entry.address,
+                    ]
+                )
             _render_table(headers, rows, output)
             output("")
         elif choice == "2":
@@ -233,9 +224,7 @@ def run_interactive_menu(
                 f"{CYAN}{BOLD}│{RESET} Please provide core identity details below:           "
                 f"{CYAN}{BOLD}│{RESET}"
             )
-            output(
-                f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}"
-            )
+            output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}")
             identity = _prompt_identity(input_fn)
             output(
                 f"\n{CYAN}{BOLD}┌─── MUTABLE ATTRIBUTES ─────────────────────────────────┐{RESET}"
@@ -244,9 +233,7 @@ def run_interactive_menu(
                 f"{CYAN}{BOLD}│{RESET} Please provide mutable profile attributes below:      "
                 f"{CYAN}{BOLD}│{RESET}"
             )
-            output(
-                f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}"
-            )
+            output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}")
             mutable = _prompt_mutable(input_fn)
             try:
                 context.identity_service.create_identity(identity, mutable, Role.CENTRAL)
@@ -261,9 +248,7 @@ def run_interactive_menu(
                 f"{CYAN}{BOLD}│{RESET} Retrieve and modify mutable attributes of a record:    "
                 f"{CYAN}{BOLD}│{RESET}"
             )
-            output(
-                f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}"
-            )
+            output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}")
             digital_id = input_fn(f"  {CYAN}❯{RESET} {BOLD}Digital ID{RESET}: ").strip()
             if not digital_id:
                 _print_error("Digital ID is required.", output)
@@ -283,9 +268,7 @@ def run_interactive_menu(
                 f"{CYAN}{BOLD}│{RESET} Move a Digital ID record between lifecycle statuses:   "
                 f"{CYAN}{BOLD}│{RESET}"
             )
-            output(
-                f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}"
-            )
+            output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}")
             digital_id = input_fn(f"  {CYAN}❯{RESET} {BOLD}Digital ID{RESET}: ").strip()
             if not digital_id:
                 _print_error("Digital ID is required.", output)
@@ -295,9 +278,11 @@ def run_interactive_menu(
                 f"  Available statuses: {GREEN}active{RESET}, "
                 f"{YELLOW}suspended{RESET}, {RED}revoked{RESET}"
             )
-            status_value = input_fn(
-                f"  {CYAN}❯{RESET} {BOLD}New status (active/suspended/revoked){RESET}: "
-            ).strip().lower()
+            status_value = (
+                input_fn(f"  {CYAN}❯{RESET} {BOLD}New status (active/suspended/revoked){RESET}: ")
+                .strip()
+                .lower()
+            )
             reason = input_fn(f"  {CYAN}❯{RESET} {BOLD}Reason{RESET}: ").strip() or "unspecified"
             try:
                 status = Status(status_value)
@@ -319,9 +304,7 @@ def run_interactive_menu(
                 f"{CYAN}{BOLD}│{RESET} Dump full chronological trace of system log actions:   "
                 f"{CYAN}{BOLD}│{RESET}"
             )
-            output(
-                f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}"
-            )
+            output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}")
             path_value = input_fn(
                 f"  {CYAN}❯{RESET} {BOLD}Audit path (default audit_log.json){RESET}: "
             ).strip()
@@ -333,14 +316,12 @@ def run_interactive_menu(
                 _print_error(str(exc), output)
         elif choice == "0":
             output(
-                f"\n{CYAN}{BOLD}┌────────────────────────────────"
-                f"────────────────────────┐{RESET}"
+                f"\n{CYAN}{BOLD}┌────────────────────────────────────────────────────────┐{RESET}"
             )
             output(f"{CYAN}{BOLD}│              Exiting Digital ID Control System         │{RESET}")
             output(f"{CYAN}{BOLD}│                        Goodbye!                        │{RESET}")
             output(
-                f"{CYAN}{BOLD}└────────────────────────────────"
-                f"────────────────────────┘{RESET}\n"
+                f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}\n"
             )
             return
         else:
@@ -350,9 +331,7 @@ def run_interactive_menu(
 def _prompt_identity(input_fn: Callable[[str], str]) -> IdentityAttributes:
     digital_id = input_fn(f"  {CYAN}❯{RESET} {BOLD}Digital ID{RESET}: ").strip()
     national_id = input_fn(f"  {CYAN}❯{RESET} {BOLD}National ID{RESET}: ").strip()
-    date_of_birth = input_fn(
-        f"  {CYAN}❯{RESET} {BOLD}Date of birth (YYYY-MM-DD){RESET}: "
-    ).strip()
+    date_of_birth = input_fn(f"  {CYAN}❯{RESET} {BOLD}Date of birth (YYYY-MM-DD){RESET}: ").strip()
     return IdentityAttributes(
         digital_id=digital_id,
         national_id=national_id,
@@ -378,16 +357,12 @@ def _handle_verification(
     input_fn: Callable[[str], str],
     output: Callable[[str], None],
 ) -> None:
-    output(
-        f"\n{CYAN}{BOLD}┌─── VERIFICATION PORTAL ────────────────────────────────┐{RESET}"
-    )
+    output(f"\n{CYAN}{BOLD}┌─── VERIFICATION PORTAL ────────────────────────────────┐{RESET}")
     output(
         f"{CYAN}{BOLD}│{RESET} Select the verification authority role:               "
         f"{CYAN}{BOLD}│{RESET}"
     )
-    output(
-        f"{CYAN}{BOLD}├────────────────────────────────────────────────────────┤{RESET}"
-    )
+    output(f"{CYAN}{BOLD}├────────────────────────────────────────────────────────┤{RESET}")
     output(
         f"{CYAN}{BOLD}│{RESET}  {BOLD}[a]{RESET} Tax Authority Verification                        "
         f"{CYAN}{BOLD}│{RESET}"
@@ -404,21 +379,17 @@ def _handle_verification(
         f"{CYAN}{BOLD}│{RESET}  {BOLD}[d]{RESET} Bank / Employer General Verification             "
         f"{CYAN}{BOLD}│{RESET}"
     )
-    output(
-        f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}"
-    )
+    output(f"{CYAN}{BOLD}└────────────────────────────────────────────────────────┘{RESET}")
     choice = input_fn(f"  {CYAN}❯{RESET} {BOLD}Select verification{RESET}: ").strip().lower()
     digital_id = input_fn(f"  {CYAN}❯{RESET} {BOLD}Digital ID{RESET}: ").strip()
 
     if choice == "a":
         try:
             period_start = _prompt_date(
-                input_fn,
-                f"  {CYAN}❯{RESET} {BOLD}Period start (YYYY-MM-DD){RESET}: "
+                input_fn, f"  {CYAN}❯{RESET} {BOLD}Period start (YYYY-MM-DD){RESET}: "
             )
             period_end = _prompt_date(
-                input_fn,
-                f"  {CYAN}❯{RESET} {BOLD}Period end (YYYY-MM-DD){RESET}: "
+                input_fn, f"  {CYAN}❯{RESET} {BOLD}Period end (YYYY-MM-DD){RESET}: "
             )
         except ValueError as exc:
             _print_error(str(exc), output)
@@ -431,13 +402,10 @@ def _handle_verification(
         )
     elif choice == "b":
         keywords_raw = input_fn(
-            f"  {CYAN}❯{RESET} "
-            f"{BOLD}Restriction keywords (comma separated, optional){RESET}: "
+            f"  {CYAN}❯{RESET} {BOLD}Restriction keywords (comma separated, optional){RESET}: "
         ).strip()
         keywords = (
-            [k.strip() for k in keywords_raw.split(",") if k.strip()]
-            if keywords_raw
-            else None
+            [k.strip() for k in keywords_raw.split(",") if k.strip()] if keywords_raw else None
         )
         result = context.verification_service.verify_driving_licence(
             digital_id,
@@ -445,9 +413,10 @@ def _handle_verification(
             restriction_keywords=keywords,
         )
     elif choice == "c":
-        locality = input_fn(
-            f"  {CYAN}❯{RESET} {BOLD}Required locality (optional){RESET}: "
-        ).strip() or None
+        locality = (
+            input_fn(f"  {CYAN}❯{RESET} {BOLD}Required locality (optional){RESET}: ").strip()
+            or None
+        )
         result = context.verification_service.verify_local_authority(
             digital_id,
             role=Role.LOCAL,
@@ -463,9 +432,7 @@ def _handle_verification(
         return
 
     # Print a beautiful verification card report
-    output(
-        f"\n{CYAN}{BOLD}┌─── VERIFICATION DECISION CARD ─────────────────────────┐{RESET}"
-    )
+    output(f"\n{CYAN}{BOLD}┌─── VERIFICATION DECISION CARD ─────────────────────────┐{RESET}")
     status_label = (
         f"{GREEN}{BOLD}PASS (ELIGIBLE){RESET}"
         if result.eligible

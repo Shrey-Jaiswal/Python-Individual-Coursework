@@ -91,8 +91,7 @@ class JsonStore:
             for item in restrictions_items
         ]
         history = [
-            self._history_from_dict(self._ensure_dict(item, "history"))
-            for item in history_items
+            self._history_from_dict(self._ensure_dict(item, "history")) for item in history_items
         ]
         return DigitalId(
             identity=identity,

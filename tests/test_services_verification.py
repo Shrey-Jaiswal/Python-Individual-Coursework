@@ -339,10 +339,7 @@ def test_missing_identity_paths_return_limited_failure() -> None:
         service.verify_driving_licence("missing", role=Role.DRIVING_LICENCE_AUTHORITY).reason
         == "identity not found"
     )
-    assert (
-        service.verify_local_authority("missing", role=Role.LOCAL).reason
-        == "identity not found"
-    )
+    assert service.verify_local_authority("missing", role=Role.LOCAL).reason == "identity not found"
 
 
 def test_missing_identity_is_denied_and_audited() -> None:

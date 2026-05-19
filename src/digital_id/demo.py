@@ -128,11 +128,13 @@ def run_scripted_demo(
 
     try:
         agg = context.repository.get_by_id(created.digital_id)
-        agg.update_immutable(IdentityAttributes(
-            digital_id=created.digital_id,
-            national_id="changed-national-id",
-            date_of_birth=created.date_of_birth,
-        ))
+        agg.update_immutable(
+            IdentityAttributes(
+                digital_id=created.digital_id,
+                national_id="changed-national-id",
+                date_of_birth=created.date_of_birth,
+            )
+        )
         immutable_outcome = "ACCEPTED (unexpected)"
     except ImmutableAttributeError:
         immutable_outcome = "REJECTED (expected)"

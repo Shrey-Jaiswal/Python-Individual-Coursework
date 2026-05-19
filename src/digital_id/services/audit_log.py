@@ -59,8 +59,7 @@ class AuditLog:
             raise PersistenceError("Invalid audit log entry: entry must be an object")
         details = value.get("details", {})
         if not isinstance(details, dict) or not all(
-            isinstance(key, str) and isinstance(item, str)
-            for key, item in details.items()
+            isinstance(key, str) and isinstance(item, str) for key, item in details.items()
         ):
             raise PersistenceError("Invalid audit log entry: details must contain text values")
         try:
