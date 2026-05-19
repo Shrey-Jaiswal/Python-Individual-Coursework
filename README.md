@@ -4,7 +4,7 @@
 [![Coverage](coverage.svg)](coverage.svg)
 
 ## GitHub repository
-https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/tree/shrey-branch
+https://github.com/Shrey-Jaiswal/Python-Individual-Coursework/
 
 ## Overview
 Console-based backend for Digital ID lifecycle management. A central authority creates and
