@@ -60,6 +60,10 @@ def test_revoked_cannot_transition() -> None:
 
 
 def test_restriction_validation_rejects_invalid_period() -> None:
-    restriction = Restriction(name="driving_restriction", start=date(2026, 5, 1), end=date(2026, 4, 1))
+    restriction = Restriction(
+        name="driving_restriction",
+        start=date(2026, 5, 1),
+        end=date(2026, 4, 1),
+    )
     with pytest.raises(InvalidRestrictionError):
         restriction.validate()

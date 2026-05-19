@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
-from typing import Any
 from dataclasses import asdict
 from datetime import date, datetime
 from pathlib import Path
+from typing import Iterable
 
 from digital_id.domain import (
     DigitalId,
@@ -30,12 +29,9 @@ class JsonStore:
         if not self._path.exists():
             return []
         try:
-            data: Any = json.loads(self._path.read_text(encoding="utf-8"))
+            data = json.loads(self._path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise PersistenceError("Unable to read JSON store.") from exc
-        if not isinstance(data, dict):
-            raise PersistenceError("Invalid JSON store format")
-
         version = data.get("schema_version")
         if version != _SCHEMA_VERSION:
             raise SchemaVersionError(f"Unsupported schema version: {version}")
@@ -53,7 +49,7 @@ class JsonStore:
         except OSError as exc:
             raise PersistenceError("Unable to write JSON store.") from exc
 
-    def _digital_id_to_dict(self, identity: DigitalId) -> dict[str, Any]:
+    def _digital_id_to_dict(self, identity: DigitalId) -> dict[str, object]:
         return {
             "identity": asdict(identity.identity),
             "mutable": asdict(identity.mutable),
@@ -62,7 +58,7 @@ class JsonStore:
             "status_history": [self._history_to_dict(h) for h in identity.status_history],
         }
 
-    def _digital_id_from_dict(self, data: dict[str, Any]) -> DigitalId:
+    def _digital_id_from_dict(self, data: dict[str, object]) -> DigitalId:
         identity_data = data.get("identity", {})
         mutable_data = data.get("mutable", {})
         identity = IdentityAttributes(
@@ -88,21 +84,21 @@ class JsonStore:
             status_history=history,
         )
 
-    def _restriction_to_dict(self, restriction: Restriction) -> dict[str, Any]:
+    def _restriction_to_dict(self, restriction: Restriction) -> dict[str, object]:
         return {
             "name": restriction.name,
             "start": restriction.start.isoformat() if restriction.start else None,
             "end": restriction.end.isoformat() if restriction.end else None,
         }
 
-    def _restriction_from_dict(self, data: dict[str, Any]) -> Restriction:
+    def _restriction_from_dict(self, data: dict[str, object]) -> Restriction:
         start = self._parse_date(data.get("start"))
         end = self._parse_date(data.get("end"))
         restriction = Restriction(name=str(data.get("name", "")), start=start, end=end)
         restriction.validate()
         return restriction
 
-    def _history_to_dict(self, entry: StatusHistoryEntry) -> dict[str, Any]:
+    def _history_to_dict(self, entry: StatusHistoryEntry) -> dict[str, object]:
         return {
             "from_status": entry.from_status.value,
             "to_status": entry.to_status.value,
@@ -110,7 +106,7 @@ class JsonStore:
             "reason": entry.reason,
         }
 
-    def _history_from_dict(self, data: dict[str, Any]) -> StatusHistoryEntry:
+    def _history_from_dict(self, data: dict[str, object]) -> StatusHistoryEntry:
         from_status = Status(str(data.get("from_status", Status.ACTIVE.value)))
         to_status = Status(str(data.get("to_status", Status.ACTIVE.value)))
         changed_at = self._parse_datetime(data.get("changed_at"))

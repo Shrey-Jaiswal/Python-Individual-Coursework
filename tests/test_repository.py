@@ -3,7 +3,12 @@ from pathlib import Path
 import pytest
 
 from digital_id.domain import DigitalId, IdentityAttributes, MutableAttributes
-from digital_id.persistence import DuplicateIdentityError, InMemoryRepository, JsonStore, NotFoundError
+from digital_id.persistence import (
+    DuplicateIdentityError,
+    InMemoryRepository,
+    JsonStore,
+    NotFoundError,
+)
 
 
 def make_identity(digital_id: str, national_id: str) -> DigitalId:
