@@ -49,6 +49,11 @@ class VerificationService:
             return VerificationResult(False, "reporting period has not ended")
         if identity.status is not Status.ACTIVE:
             result = VerificationResult(False, "identity is not active")
+        elif self._was_suspended_during(identity, period_start, period_end):
+            result = VerificationResult(
+                False,
+                "identity was suspended during reporting period",
+            )
         else:
             result = VerificationResult(True, "tax verification passed")
         self._record("verify_tax", identity.identity.digital_id, result.eligible, role)
@@ -132,6 +137,40 @@ class VerificationService:
             for restriction in restrictions
             if any(keyword in restriction.name.lower() for keyword in lowered)
         ]
+
+    def _was_suspended_during(
+        self,
+        identity: DigitalId,
+        period_start: date,
+        period_end: date,
+    ) -> bool:
+        entries = sorted(identity.status_history, key=lambda entry: entry.changed_at)
+        suspended_start: date | None = None
+
+        for entry in entries:
+            if entry.to_status is Status.SUSPENDED:
+                suspended_start = entry.changed_at.date()
+            if entry.from_status is Status.SUSPENDED:
+                start_date = suspended_start or period_start
+                end_date = entry.changed_at.date()
+                if self._overlaps_period(start_date, end_date, period_start, period_end):
+                    return True
+                suspended_start = None
+
+        if suspended_start is not None:
+            if self._overlaps_period(suspended_start, period_end, period_start, period_end):
+                return True
+
+        return False
+
+    def _overlaps_period(
+        self,
+        start: date,
+        end: date,
+        period_start: date,
+        period_end: date,
+    ) -> bool:
+        return start <= period_end and end >= period_start
 
     def _record(self, action: str, target_id: str, eligible: bool, actor: Role) -> None:
         if self._audit_log is None:

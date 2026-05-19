@@ -1,8 +1,15 @@
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
-from digital_id.domain import DigitalId, IdentityAttributes, MutableAttributes, Restriction, Status
+from digital_id.domain import (
+    DigitalId,
+    IdentityAttributes,
+    MutableAttributes,
+    Restriction,
+    Status,
+    StatusHistoryEntry,
+)
 from digital_id.services import AuthorizationError, Role, VerificationService
 
 
@@ -88,6 +95,64 @@ def test_tax_verification_rejects_unfinished_period() -> None:
     )
 
     assert result.eligible is False
+
+
+def test_tax_verification_rejects_suspension_in_period() -> None:
+    service = VerificationService()
+    identity = make_identity()
+    identity.status_history = [
+        StatusHistoryEntry(
+            from_status=Status.ACTIVE,
+            to_status=Status.SUSPENDED,
+            changed_at=datetime(2026, 2, 1, 9, 0),
+            reason="review",
+        ),
+        StatusHistoryEntry(
+            from_status=Status.SUSPENDED,
+            to_status=Status.ACTIVE,
+            changed_at=datetime(2026, 2, 10, 9, 0),
+            reason="cleared",
+        ),
+    ]
+
+    result = service.verify_tax(
+        identity,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 3, 31),
+        role=Role.TAX_AUTHORITY,
+        as_of=date(2026, 4, 1),
+    )
+
+    assert result.eligible is False
+
+
+def test_tax_verification_allows_no_suspension_in_period() -> None:
+    service = VerificationService()
+    identity = make_identity()
+    identity.status_history = [
+        StatusHistoryEntry(
+            from_status=Status.ACTIVE,
+            to_status=Status.SUSPENDED,
+            changed_at=datetime(2025, 12, 1, 9, 0),
+            reason="review",
+        ),
+        StatusHistoryEntry(
+            from_status=Status.SUSPENDED,
+            to_status=Status.ACTIVE,
+            changed_at=datetime(2025, 12, 5, 9, 0),
+            reason="cleared",
+        ),
+    ]
+
+    result = service.verify_tax(
+        identity,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 3, 31),
+        role=Role.TAX_AUTHORITY,
+        as_of=date(2026, 4, 1),
+    )
+
+    assert result.eligible is True
 
 
 def test_driving_verification_rejects_active_restriction() -> None:
