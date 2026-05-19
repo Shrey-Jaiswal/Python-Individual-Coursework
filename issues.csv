@@ -110,7 +110,7 @@ Acceptance Criteria:
 - output is clear and structured
 - interactive mode offers key operations safely
 
-Rubric focus: Technical Communication","cli;demo","In Progress"
+Rubric focus: Technical Communication","cli;demo","Done"
 "Unit test suite (pytest)","Goal: implement tests for core rules and edge cases.
 
 Scope:
