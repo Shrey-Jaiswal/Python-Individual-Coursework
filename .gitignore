@@ -1,4 +1,6 @@
-audit_log.json# Python
+audit_log.json
+
+# Python
 __pycache__/
 *.py[cod]
 *.pyd
@@ -9,6 +11,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 coverage.xml
+test-results.xml
 htmlcov/
 
 # Build artifacts
