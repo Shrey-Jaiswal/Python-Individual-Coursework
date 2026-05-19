@@ -24,11 +24,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         default="audit_log.json",
         help="Path to write audit log JSON (scripted demo)",
     )
+    parser.add_argument(
+        "--pretty",
+        action="store_true",
+        help="Use spaced output formatting for scripted demo",
+    )
     args = parser.parse_args(argv)
 
     context = build_demo_context()
     audit_path = Path(args.audit_path) if args.audit_path else None
-    run_scripted_demo(context, audit_path=audit_path, output=print)
+    style = "pretty" if args.pretty else "compact"
+    run_scripted_demo(context, audit_path=audit_path, output=print, style=style)
 
     if args.scripted_only:
         return 0
