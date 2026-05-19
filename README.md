@@ -121,7 +121,8 @@ the backend handles happy paths, edge cases, and unauthorized requests:
 ## Architecture and code design
 
 The system uses a layered architecture to keep core business rules separate from storage adapters
-and command-line interfaces.
+and command-line interfaces. Detailed architectural decisions, rationales, and alternatives considered are recorded in the [Architecture decisions journal](docs/ARCHITECTURE_DECISIONS.md).
+
 
 ```mermaid
 graph TD
@@ -260,6 +261,6 @@ python -m mypy src --config-file pyproject.toml
 ## Development log and Git history
 
 This project followed incremental development steps:
-- Sprints: Chronological progress is documented in [DEVELOPMENT_EVIDENCE.md](DEVELOPMENT_EVIDENCE.md).
+- Sprints: Chronological progress is documented in [DEVELOPMENT_EVIDENCE.md](docs/DEVELOPMENT_EVIDENCE.md).
 - Issue list: Ticket statuses are listed in [issues.csv](issues.csv) and updated on the board.
 - Continuous Integration: GitHub Actions runs all tests, type checks, and linters on every commit.
