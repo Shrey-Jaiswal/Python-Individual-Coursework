@@ -70,6 +70,20 @@ def test_tax_verification_rejects_inactive_status() -> None:
     assert result.eligible is False
 
 
+def test_tax_verification_rejects_unfinished_period() -> None:
+    service = VerificationService()
+    identity = make_identity()
+
+    result = service.verify_tax(
+        identity,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 6, 30),
+        as_of=date(2026, 6, 1),
+    )
+
+    assert result.eligible is False
+
+
 def test_driving_verification_rejects_active_restriction() -> None:
     service = VerificationService()
     restriction = Restriction(name="driving_suspension", start=date(2026, 1, 1))
@@ -94,11 +108,47 @@ def test_driving_verification_allows_non_matching_restriction_keywords() -> None
     assert result.eligible is True
 
 
+def test_driving_verification_rejects_inactive_status() -> None:
+    service = VerificationService()
+    identity = make_identity(status=Status.SUSPENDED)
+
+    result = service.verify_driving_licence(identity, as_of=date(2026, 2, 1))
+
+    assert result.eligible is False
+
+
+def test_driving_verification_passes_without_restrictions() -> None:
+    service = VerificationService()
+    identity = make_identity()
+
+    result = service.verify_driving_licence(identity, as_of=date(2026, 2, 1))
+
+    assert result.eligible is True
+
+
 def test_local_authority_requires_matching_locality() -> None:
     service = VerificationService()
     identity = make_identity(address="10 Hill Road, Leeds")
 
     result = service.verify_local_authority(identity, required_locality="London")
+
+    assert result.eligible is False
+
+
+def test_local_authority_allows_matching_locality() -> None:
+    service = VerificationService()
+    identity = make_identity(address="10 Hill Road, London")
+
+    result = service.verify_local_authority(identity, required_locality="London")
+
+    assert result.eligible is True
+
+
+def test_local_authority_rejects_missing_address() -> None:
+    service = VerificationService()
+    identity = make_identity(address=" ")
+
+    result = service.verify_local_authority(identity)
 
     assert result.eligible is False
 
